@@ -8,3 +8,11 @@
 
 玩法参考：https://krillion.io/ 。未使用原站源代码、品牌素材或私人题库。
 地理面积核对：https://www.indexmundi.com/facts/indicators/AG.SRF.TOTL.K2/rankings/africa
+
+## GitHub Pages
+
+网站使用 GitHub Actions 自动发布 dist 目录。每次推送到 main 会先检查题库与脚本，然后更新网页。
+
+仓库的 Settings → Pages → Build and deployment → Source 选择 GitHub Actions。
+
+离线游玩：直接用浏览器打开 offline/Deepcut.html。
