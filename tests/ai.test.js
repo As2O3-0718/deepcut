@@ -78,3 +78,11 @@ test('question title history prevents repeats even when IDs or popularity wordin
  const source=[{id:'new',title:'说出一种交通标志。'},{id:'fresh',title:'说出一种乐器。'}];
  assert.equal(pickRound(source,[],['说出一种常见的交通标志。'])[0].id,'fresh');
 });
+import {mergeHistory,avoidRecentSwaps} from '../dist/bank.js';
+test('merged tab histories preserve questions seen in both tabs',()=>{assert.deepEqual(mergeHistory(['a','b'],['a','c']),['a','b','c'])});
+test('swapped questions are excluded next round even after title wording changes',()=>{
+ const source=[{id:'swap',title:'说出一种交通标志。'},...Array.from({length:8},(_,i)=>({id:'q'+i,title:'题'+i}))];const pool=avoidRecentSwaps(source,['说出一种常见的交通标志。']);assert.equal(pickRound(pool).length,7);assert.ok(!pool.some(q=>q.id==='swap'));
+});
+test('title-only recent history is not treated as the oldest repeat',()=>{
+ const source=[{id:'new-id',title:'最近题'},{id:'old-id',title:'旧题'}];assert.equal(pickRound(source,[],['旧题','最近题'])[0].title,'旧题');
+});

@@ -31,7 +31,7 @@ export function findAnswer(question,value){const key=normalize(value);return key
 export const questionHistoryKey=title=>typeof title!=='string'?'':normalize(normalizeQuestionWording({title}).title).replace(/[，。！？、：；“”「」（）(),!?;:"\s]/g,'');
 export function pickRound(source=bank,seen=[],seenTitles=[]){
  const shuffle=items=>{items=[...items];for(let i=items.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[items[i],items[j]]=[items[j],items[i]]}return items};
- const known=new Set(seen),titles=new Set(seenTitles.map(questionHistoryKey));const played=q=>known.has(q.id)||titles.has(questionHistoryKey(q.title));const fresh=shuffle(source.filter(q=>!played(q)));const repeats=source.filter(played).sort((a,b)=>seen.indexOf(a.id)-seen.indexOf(b.id));
+ const known=new Set(seen),titles=new Set(seenTitles.map(questionHistoryKey));const played=q=>known.has(q.id)||titles.has(questionHistoryKey(q.title));const fresh=shuffle(source.filter(q=>!played(q)));const rank=q=>{const titleRank=seenTitles.map(questionHistoryKey).lastIndexOf(questionHistoryKey(q.title));return Math.max(seen.indexOf(q.id)/Math.max(1,seen.length),titleRank/Math.max(1,seenTitles.length))};const repeats=source.filter(played).sort((a,b)=>rank(a)-rank(b));
  return [...fresh,...repeats].slice(0,7);
 }
 
@@ -39,3 +39,6 @@ export function chooseReplacement(source,active,replaced,seen=[],seenTitles=[]){
  const excluded=[...active,...replaced];const ids=new Set(excluded.map(q=>q.id));const titles=new Set(excluded.map(q=>q.title));
  return pickRound(source.filter(q=>!ids.has(q.id)&&!titles.has(q.title)),seen,seenTitles)[0];
 }
+
+export function mergeHistory(saved,current,limit=2000){return [...new Set([...saved,...current])].slice(-limit)}
+export function avoidRecentSwaps(source,swappedTitles){const keys=new Set(swappedTitles.map(questionHistoryKey));return source.filter(q=>!keys.has(questionHistoryKey(q.title)))}
