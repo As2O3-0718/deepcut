@@ -86,3 +86,13 @@ test('swapped questions are excluded next round even after title wording changes
 test('title-only recent history is not treated as the oldest repeat',()=>{
  const source=[{id:'new-id',title:'最近题'},{id:'old-id',title:'旧题'}];assert.equal(pickRound(source,[],['旧题','最近题'])[0].title,'旧题');
 });
+test('other players dynamic questions do not exhaust a player new round pool',async()=>{
+ const candidates=Array.from({length:7},(_,i)=>({...fixture,title:'独立主题'+i}));
+ const ai=await engine(async()=>({questions:candidates}),{minIntervalMs:0});
+ for(const [i,q]of candidates.entries())ai.dynamic.set('other-'+i,{...q,id:'other-'+i});
+ const round=await ai.round([]);assert.equal(round.length,7);
+});
+test('player history remains excluded even when shared questions are eligible',async()=>{
+ const candidates=Array.from({length:8},(_,i)=>({...fixture,title:'玩家主题'+i}));const ai=await engine(async()=>({questions:candidates}),{minIntervalMs:0});
+ const round=await ai.round(['玩家主题0']);assert.equal(round.length,7);assert.ok(round.every(q=>q.title!=='玩家主题0'));
+});
