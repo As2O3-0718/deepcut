@@ -92,14 +92,24 @@ function knownInvalidAnswer(question,answer){
 
 // A question-relative scale: every question has an attainable 100-point reference.
 const SCORING_VERSION=2;
+function normalizeQuestionWording(q){
+ const clean=text=>typeof text!=='string'?text:text
+  .replace(/并因此知名/g,'')
+  .replace(/、在全球具有较高知名度|且具有较高知名度|、建筑本身具有较高知名度/g,'')
+  .replace(/实验名称需在科学史中广为人知/g,'实验需真实存在于科学史中')
+  .replace(/仪器需在化学实验室中常见/g,'仪器需用于化学实验室')
+  .replace(/不限于龙凤等常见/g,'不限于龙凤等例子')
+  .replace(/(?:世界著名|广为人知|知名|著名|常见|热门)(?:的)?/g,'');
+ return {...q,...(q.title===undefined?{}:{title:clean(q.title)}),...(q.hint===undefined?{}:{hint:clean(q.hint)})};
+}
 function calibrateQuestion(q){
+ q=normalizeQuestionWording(q);
  const maximum=Math.max(...q.answers.map(a=>a.score));
  if(!Number.isFinite(maximum)||maximum<10||maximum>100)throw new Error('Invalid reference scores');
  return {...q,scoreVersion:SCORING_VERSION,answers:q.answers.map(a=>({...a,score:maximum===100?a.score:maximum===10?100:Math.round(10+(a.score-10)*90/(maximum-10))}))};
 }
 function fullScoreAnswers(q){return q.answers.filter(a=>a.score===100)}
 
-// AI-generated and AI-reviewed, with selected editorial corrections; not fully fact-verified.
 const generated = [
   {
     "title": "说出一部吉卜力工作室出品的动画长片。",
@@ -1282,7 +1292,7 @@ const generated = [
     "id": "extra-3-0"
   },
   {
-    "title": "说出一款知名的“魂类”（Soulslike）动作角色扮演游戏。",
+    "title": "说出一款“魂类”（Soulslike）动作角色扮演游戏。",
     "category": "游戏",
     "hint": "以高难度、耐力管理、篝火存档和碎片化叙事为特征。 参考答案非穷举，其他答案可用 AI 判定。",
     "answers": [
@@ -1361,7 +1371,7 @@ const generated = [
     "id": "extra-3-1"
   },
   {
-    "title": "说出一款知名的“Roguelike”或“Roguelite”游戏。",
+    "title": "说出一款“Roguelike”或“Roguelite”游戏。",
     "category": "游戏",
     "hint": "以随机生成关卡、永久死亡和局内成长为核心机制。 参考答案非穷举，其他答案可用 AI 判定。",
     "answers": [
@@ -1440,7 +1450,7 @@ const generated = [
     "id": "extra-3-2"
   },
   {
-    "title": "说出一款知名的“银河恶魔城”（Metroidvania）类型游戏。",
+    "title": "说出一款“银河恶魔城”（Metroidvania）类型游戏。",
     "category": "游戏",
     "hint": "以非线性探索、能力解锁和地图回溯为特征。 参考答案非穷举，其他答案可用 AI 判定。",
     "answers": [
@@ -1519,7 +1529,7 @@ const generated = [
     "id": "extra-3-3"
   },
   {
-    "title": "说出一款知名的“模拟经营”类游戏。",
+    "title": "说出一款“模拟经营”类游戏。",
     "category": "游戏",
     "hint": "以资源管理、建造发展和经济循环为核心玩法。 参考答案非穷举，其他答案可用 AI 判定。",
     "answers": [
@@ -1598,7 +1608,7 @@ const generated = [
     "id": "extra-3-4"
   },
   {
-    "title": "说出一款知名的“大逃杀”（Battle Royale）类型游戏。",
+    "title": "说出一款“大逃杀”（Battle Royale）类型游戏。",
     "category": "游戏",
     "hint": "以多人空降、缩圈和最后幸存者为核心规则。 参考答案非穷举，其他答案可用 AI 判定。",
     "answers": [
@@ -1678,7 +1688,7 @@ const generated = [
     "id": "extra-3-5"
   },
   {
-    "title": "说出一款知名的“音乐节奏”类游戏。",
+    "title": "说出一款“音乐节奏”类游戏。",
     "category": "游戏",
     "hint": "以跟随音乐节奏进行按键或触屏操作为核心玩法。 参考答案非穷举，其他答案可用 AI 判定。",
     "answers": [
@@ -1757,7 +1767,7 @@ const generated = [
     "id": "extra-3-6"
   },
   {
-    "title": "说出一款知名的“格斗”类游戏。",
+    "title": "说出一款“格斗”类游戏。",
     "category": "游戏",
     "hint": "以一对一对战、连招和帧数判定为核心玩法。 参考答案非穷举，其他答案可用 AI 判定。",
     "answers": [
@@ -2511,7 +2521,7 @@ const generated = [
     "id": "extra-5-0"
   },
   {
-    "title": "说出一种管弦乐队中常见的乐器。",
+    "title": "说出一种管弦乐队中乐器。",
     "category": "音乐",
     "hint": "指在标准交响乐团中常规使用的乐器，包括弦乐、木管、铜管和打击乐。 参考答案非穷举，其他答案可用 AI 判定。",
     "answers": [
@@ -2750,7 +2760,7 @@ const generated = [
   {
     "title": "说出一位电影配乐作曲家。",
     "category": "音乐",
-    "hint": "指主要为电影创作原创配乐并因此知名的作曲家。 参考答案非穷举，其他答案可用 AI 判定。",
+    "hint": "指主要为电影创作原创配乐的作曲家。 参考答案非穷举，其他答案可用 AI 判定。",
     "answers": [
       {
         "name": "约翰·威廉姆斯",
@@ -4278,7 +4288,7 @@ const generated = [
     "id": "extra-7-7"
   },
   {
-    "title": "说出一个位于欧洲的著名山脉。",
+    "title": "说出一个位于欧洲的山脉。",
     "category": "地理",
     "hint": "山脉主体在欧洲境内，包括跨洲山脉的欧洲部分。 参考答案非穷举，其他答案可用 AI 判定。",
     "answers": [
@@ -4357,7 +4367,7 @@ const generated = [
     "id": "extra-8-0"
   },
   {
-    "title": "说出一个位于亚洲的著名沙漠。",
+    "title": "说出一个位于亚洲的沙漠。",
     "category": "地理",
     "hint": "沙漠主体在亚洲境内，包括跨洲沙漠的亚洲部分。 参考答案非穷举，其他答案可用 AI 判定。",
     "answers": [
@@ -4436,7 +4446,7 @@ const generated = [
     "id": "extra-8-1"
   },
   {
-    "title": "说出一个位于非洲的著名湖泊。",
+    "title": "说出一个位于非洲的湖泊。",
     "category": "地理",
     "hint": "湖泊完全或主要位于非洲大陆。 参考答案非穷举，其他答案可用 AI 判定。",
     "answers": [
@@ -4515,7 +4525,7 @@ const generated = [
     "id": "extra-8-2"
   },
   {
-    "title": "说出一个位于南美洲的著名瀑布。",
+    "title": "说出一个位于南美洲的瀑布。",
     "category": "地理",
     "hint": "瀑布位于南美洲境内，包括跨国瀑布。 参考答案非穷举，其他答案可用 AI 判定。",
     "answers": [
@@ -4580,7 +4590,7 @@ const generated = [
     "id": "extra-8-3"
   },
   {
-    "title": "说出一个位于北美洲的著名峡谷。",
+    "title": "说出一个位于北美洲的峡谷。",
     "category": "地理",
     "hint": "峡谷位于北美洲境内，包括美国、加拿大、墨西哥等。 参考答案非穷举，其他答案可用 AI 判定。",
     "answers": [
@@ -4659,7 +4669,7 @@ const generated = [
     "id": "extra-8-4"
   },
   {
-    "title": "说出一个位于大洋洲的著名岛屿。",
+    "title": "说出一个位于大洋洲的岛屿。",
     "category": "地理",
     "hint": "岛屿位于大洋洲，包括澳大利亚、新西兰、太平洋岛国等。 参考答案非穷举，其他答案可用 AI 判定。",
     "answers": [
@@ -4738,7 +4748,7 @@ const generated = [
     "id": "extra-8-5"
   },
   {
-    "title": "说出一个位于欧洲的著名火山。",
+    "title": "说出一个位于欧洲的火山。",
     "category": "地理",
     "hint": "火山位于欧洲境内，包括活火山和休眠火山。 参考答案非穷举，其他答案可用 AI 判定。",
     "answers": [
@@ -4810,7 +4820,7 @@ const generated = [
     "id": "extra-8-6"
   },
   {
-    "title": "说出一个位于亚洲的著名河流。",
+    "title": "说出一个位于亚洲的河流。",
     "category": "地理",
     "hint": "河流主要流经亚洲，包括跨国河流。 参考答案非穷举，其他答案可用 AI 判定。",
     "answers": [
@@ -5500,7 +5510,7 @@ const generated = [
   {
     "title": "说出一座中国以石窟艺术闻名的城市。",
     "category": "中国城市历史与地理",
-    "hint": "拥有著名石窟寺或摩崖造像的城市。 参考答案非穷举，其他答案可用 AI 判定。",
+    "hint": "拥有石窟寺或摩崖造像的城市。 参考答案非穷举，其他答案可用 AI 判定。",
     "answers": [
       {
         "name": "敦煌",
@@ -5707,9 +5717,9 @@ const generated = [
     "id": "extra-10-1"
   },
   {
-    "title": "说出一座世界著名的现代艺术博物馆。",
+    "title": "说出一座现代艺术博物馆。",
     "category": "博物馆",
-    "hint": "以收藏现代艺术为主、在全球具有较高知名度的博物馆，不包括综合性博物馆。 参考答案非穷举，其他答案可用 AI 判定。",
+    "hint": "以收藏现代艺术为主的博物馆，不包括综合性博物馆。 参考答案非穷举，其他答案可用 AI 判定。",
     "answers": [
       {
         "name": "纽约现代艺术博物馆",
@@ -5772,9 +5782,9 @@ const generated = [
     "id": "extra-10-2"
   },
   {
-    "title": "说出一座位于欧洲的著名哥特式大教堂。",
+    "title": "说出一座位于欧洲的哥特式大教堂。",
     "category": "建筑",
-    "hint": "需为哥特式建筑风格、位于欧洲且具有较高知名度的基督教大教堂。 参考答案非穷举，其他答案可用 AI 判定。",
+    "hint": "需为哥特式建筑风格、位于欧洲的基督教大教堂。 参考答案非穷举，其他答案可用 AI 判定。",
     "answers": [
       {
         "name": "巴黎圣母院",
@@ -5837,7 +5847,7 @@ const generated = [
     "id": "extra-10-3"
   },
   {
-    "title": "说出一座由弗兰克·劳埃德·赖特设计的著名建筑。",
+    "title": "说出一座由弗兰克·劳埃德·赖特设计的建筑。",
     "category": "建筑",
     "hint": "以赖特作为主要建筑师设计的建筑，包括住宅、博物馆等。 参考答案非穷举，其他答案可用 AI 判定。",
     "answers": [
@@ -5902,7 +5912,7 @@ const generated = [
     "id": "extra-10-4"
   },
   {
-    "title": "说出一座位于中国的著名佛教石窟。",
+    "title": "说出一座位于中国的佛教石窟。",
     "category": "建筑",
     "hint": "需为中国境内、以佛教造像和壁画闻名的石窟寺，不包括单独的石刻大佛。 参考答案非穷举，其他答案可用 AI 判定。",
     "answers": [
@@ -5967,9 +5977,9 @@ const generated = [
     "id": "extra-10-5"
   },
   {
-    "title": "说出一座世界著名的歌剧院建筑。",
+    "title": "说出一座歌剧院建筑。",
     "category": "建筑",
-    "hint": "以歌剧演出为主要功能、建筑本身具有较高知名度的剧院。 参考答案非穷举，其他答案可用 AI 判定。",
+    "hint": "以歌剧演出为主要功能的剧院。 参考答案非穷举，其他答案可用 AI 判定。",
     "answers": [
       {
         "name": "悉尼歌剧院",
@@ -6032,7 +6042,7 @@ const generated = [
     "id": "extra-10-6"
   },
   {
-    "title": "说出一座由扎哈·哈迪德设计的著名建筑。",
+    "title": "说出一座由扎哈·哈迪德设计的建筑。",
     "category": "建筑",
     "hint": "以扎哈·哈迪德作为主要建筑师设计的建筑，包括文化中心、体育场等。 参考答案非穷举，其他答案可用 AI 判定。",
     "answers": [
@@ -6736,7 +6746,7 @@ const generated = [
     "id": "extra-11-7"
   },
   {
-    "title": "说出一种常见的香草植物（烹饪或药用）。",
+    "title": "说出一种香草植物（烹饪或药用）。",
     "category": "植物",
     "hint": "指常用于调味或药用的草本植物，不包括蔬菜类。 参考答案非穷举，其他答案可用 AI 判定。",
     "answers": [
@@ -6815,7 +6825,7 @@ const generated = [
     "id": "extra-12-0"
   },
   {
-    "title": "说出一种常见的坚果（可食用）。",
+    "title": "说出一种坚果（可食用）。",
     "category": "食材",
     "hint": "指通常作为零食或烹饪用的坚果，不包括花生等豆科植物。 参考答案非穷举，其他答案可用 AI 判定。",
     "answers": [
@@ -6894,7 +6904,7 @@ const generated = [
     "id": "extra-12-1"
   },
   {
-    "title": "说出一种常见的柑橘类水果。",
+    "title": "说出一种柑橘类水果。",
     "category": "水果",
     "hint": "指芸香科柑橘属的水果，包括杂交品种。 参考答案非穷举，其他答案可用 AI 判定。",
     "answers": [
@@ -6974,7 +6984,7 @@ const generated = [
     "id": "extra-12-2"
   },
   {
-    "title": "说出一种常见的食用菌（蘑菇）。",
+    "title": "说出一种食用菌（蘑菇）。",
     "category": "食材",
     "hint": "指可食用的真菌，包括人工栽培和野生品种。 参考答案非穷举，其他答案可用 AI 判定。",
     "answers": [
@@ -7053,7 +7063,7 @@ const generated = [
     "id": "extra-12-3"
   },
   {
-    "title": "说出一种常见的豆类（可食用）。",
+    "title": "说出一种豆类（可食用）。",
     "category": "食材",
     "hint": "指豆科植物的种子，常作为粮食或蔬菜食用。 参考答案非穷举，其他答案可用 AI 判定。",
     "answers": [
@@ -7132,7 +7142,7 @@ const generated = [
     "id": "extra-12-4"
   },
   {
-    "title": "说出一种常见的根茎类蔬菜。",
+    "title": "说出一种根茎类蔬菜。",
     "category": "蔬菜",
     "hint": "指以地下根或茎为主要食用部分的蔬菜。 参考答案非穷举，其他答案可用 AI 判定。",
     "answers": [
@@ -7211,9 +7221,9 @@ const generated = [
     "id": "extra-12-5"
   },
   {
-    "title": "说出一种常见的热带水果。",
+    "title": "说出一种热带水果。",
     "category": "水果",
-    "hint": "指生长在热带地区的水果，不包括温带常见水果。 参考答案非穷举，其他答案可用 AI 判定。",
+    "hint": "指生长在热带地区的水果，不包括温带水果。 参考答案非穷举，其他答案可用 AI 判定。",
     "answers": [
       {
         "name": "香蕉",
@@ -7290,7 +7300,7 @@ const generated = [
     "id": "extra-12-6"
   },
   {
-    "title": "说出一种常见的可食用花卉。",
+    "title": "说出一种可食用花卉。",
     "category": "植物",
     "hint": "指花朵本身可以安全食用的植物，常用于烹饪或泡茶。 参考答案非穷举，其他答案可用 AI 判定。",
     "answers": [
@@ -8371,9 +8381,9 @@ const generated = [
     "id": "extra-14-3"
   },
   {
-    "title": "说出一种著名的物理实验。",
+    "title": "说出一种物理实验。",
     "category": "物理化学科学史",
-    "hint": "实验名称需在科学史中广为人知，不限于现代。 参考答案非穷举，其他答案可用 AI 判定。",
+    "hint": "实验需真实存在于科学史中，不限于现代。 参考答案非穷举，其他答案可用 AI 判定。",
     "answers": [
       {
         "name": "双缝实验",
@@ -8464,7 +8474,7 @@ const generated = [
     "id": "extra-14-4"
   },
   {
-    "title": "说出一种著名的化学理论或定律。",
+    "title": "说出一种化学理论或定律。",
     "category": "物理化学科学史",
     "hint": "理论或定律需在化学发展史中有重要地位。 参考答案非穷举，其他答案可用 AI 判定。",
     "answers": [
@@ -8683,9 +8693,9 @@ const generated = [
     "id": "extra-14-6"
   },
   {
-    "title": "说出一种常见的化学仪器。",
+    "title": "说出一种化学仪器。",
     "category": "物理化学科学史",
-    "hint": "仪器需在化学实验室中常见，用于实验操作或测量。 参考答案非穷举，其他答案可用 AI 判定。",
+    "hint": "仪器需用于化学实验室，用于实验操作或测量。 参考答案非穷举，其他答案可用 AI 判定。",
     "answers": [
       {
         "name": "试管",
@@ -9667,7 +9677,7 @@ const generated = [
   {
     "title": "说出一种武术或格斗类运动项目。",
     "category": "体育运动",
-    "hint": "包括奥运会项目、亚运会项目和常见格斗运动，不包括纯健身项目。 参考答案非穷举，其他答案可用 AI 判定。",
+    "hint": "包括奥运会项目、亚运会项目和格斗运动，不包括纯健身项目。 参考答案非穷举，其他答案可用 AI 判定。",
     "answers": [
       {
         "name": "拳击",
@@ -9755,7 +9765,7 @@ const generated = [
   {
     "title": "说出一种水上运动项目。",
     "category": "体育运动",
-    "hint": "包括奥运会项目和常见水上运动，不包括钓鱼等休闲活动。 参考答案非穷举，其他答案可用 AI 判定。",
+    "hint": "包括奥运会项目和水上运动，不包括钓鱼等休闲活动。 参考答案非穷举，其他答案可用 AI 判定。",
     "answers": [
       {
         "name": "游泳",
@@ -9836,7 +9846,7 @@ const generated = [
   {
     "title": "说出一种自行车运动的分项或车型。",
     "category": "体育运动",
-    "hint": "包括奥运会项目和常见自行车运动类型，不包括日常通勤车型。 参考答案非穷举，其他答案可用 AI 判定。",
+    "hint": "包括奥运会项目和自行车运动类型，不包括日常通勤车型。 参考答案非穷举，其他答案可用 AI 判定。",
     "answers": [
       {
         "name": "公路自行车",
@@ -9914,7 +9924,7 @@ const generated = [
     "id": "extra-17-6"
   },
   {
-    "title": "说出一种常见的健身或力量训练器材。",
+    "title": "说出一种健身或力量训练器材。",
     "category": "体育运动",
     "hint": "指用于健身房或家庭健身的器材，不包括大型固定器械。 参考答案非穷举，其他答案可用 AI 判定。",
     "answers": [
@@ -10821,7 +10831,7 @@ const generated = [
   {
     "title": "说出一个中国神话中的神兽或异兽。",
     "category": "神话传说",
-    "hint": "包括《山海经》等古籍中的生物，不限于龙凤等常见。 参考答案非穷举，其他答案可用 AI 判定。",
+    "hint": "包括《山海经》等古籍中的生物，不限于龙凤等例子。 参考答案非穷举，其他答案可用 AI 判定。",
     "answers": [
       {
         "name": "龙",
@@ -11881,7 +11891,7 @@ const generated = [
     "id": "extra-20-7"
   },
   {
-    "title": "说出一种常见的自行车类型。",
+    "title": "说出一种自行车类型。",
     "category": "交通工具",
     "hint": "按用途或设计分类，不包括品牌。 参考答案非穷举，其他答案可用 AI 判定。",
     "answers": [
@@ -11960,7 +11970,7 @@ const generated = [
     "id": "extra-21-0"
   },
   {
-    "title": "说出一种常见的火车类型。",
+    "title": "说出一种火车类型。",
     "category": "交通工具",
     "hint": "按用途或动力分类，不包括具体车次。 参考答案非穷举，其他答案可用 AI 判定。",
     "answers": [
@@ -12040,7 +12050,7 @@ const generated = [
     "id": "extra-21-1"
   },
   {
-    "title": "说出一种常见的飞机类型。",
+    "title": "说出一种飞机类型。",
     "category": "交通工具",
     "hint": "按用途或设计分类，不包括具体型号。 参考答案非穷举，其他答案可用 AI 判定。",
     "answers": [
@@ -12119,7 +12129,7 @@ const generated = [
     "id": "extra-21-2"
   },
   {
-    "title": "说出一种常见的船舶类型。",
+    "title": "说出一种船舶类型。",
     "category": "交通工具",
     "hint": "按用途或设计分类，不包括具体船名。 参考答案非穷举，其他答案可用 AI 判定。",
     "answers": [
@@ -12198,7 +12208,7 @@ const generated = [
     "id": "extra-21-3"
   },
   {
-    "title": "说出一种常见的汽车类型。",
+    "title": "说出一种汽车类型。",
     "category": "交通工具",
     "hint": "按车身或功能分类，不包括品牌。 参考答案非穷举，其他答案可用 AI 判定。",
     "answers": [
@@ -12277,7 +12287,7 @@ const generated = [
     "id": "extra-21-4"
   },
   {
-    "title": "说出一种常见的交通标志。",
+    "title": "说出一种交通标志。",
     "category": "交通设施",
     "hint": "按功能或形状分类，不包括具体文字。 参考答案非穷举，其他答案可用 AI 判定。",
     "answers": [
@@ -12356,7 +12366,7 @@ const generated = [
     "id": "extra-21-5"
   },
   {
-    "title": "说出一种常见的桥梁类型。",
+    "title": "说出一种桥梁类型。",
     "category": "交通设施",
     "hint": "按结构或用途分类，不包括具体桥名。 参考答案非穷举，其他答案可用 AI 判定。",
     "answers": [
@@ -12435,7 +12445,7 @@ const generated = [
     "id": "extra-21-6"
   },
   {
-    "title": "说出一种常见的隧道类型。",
+    "title": "说出一种隧道类型。",
     "category": "交通设施",
     "hint": "按用途或地质条件分类，不包括具体隧道名。 参考答案非穷举，其他答案可用 AI 判定。",
     "answers": [
@@ -12514,7 +12524,7 @@ const generated = [
     "id": "extra-21-7"
   },
   {
-    "title": "说出一种常见的摄影构图技巧。",
+    "title": "说出一种摄影构图技巧。",
     "category": "摄影",
     "hint": "指安排画面元素以增强视觉效果的方法，不限于三分法。 参考答案非穷举，其他答案可用 AI 判定。",
     "answers": [
@@ -12672,7 +12682,7 @@ const generated = [
     "id": "extra-22-1"
   },
   {
-    "title": "说出一种摄影中常见的镜头类型或焦距分类。",
+    "title": "说出一种摄影中镜头类型或焦距分类。",
     "category": "摄影",
     "hint": "按焦距或用途划分，如广角、长焦等。 参考答案非穷举，其他答案可用 AI 判定。",
     "answers": [
@@ -12830,7 +12840,7 @@ const generated = [
     "id": "extra-22-3"
   },
   {
-    "title": "说出一种电影中常见的镜头运动方式。",
+    "title": "说出一种电影中镜头运动方式。",
     "category": "电影",
     "hint": "指摄影机在拍摄时的移动方式，如推、拉、摇、移等。 参考答案非穷举，其他答案可用 AI 判定。",
     "answers": [
@@ -12909,7 +12919,7 @@ const generated = [
     "id": "extra-22-4"
   },
   {
-    "title": "说出一种电影中常见的景别类型。",
+    "title": "说出一种电影中景别类型。",
     "category": "电影",
     "hint": "根据画面中人物或场景的范围划分，如远景、特写等。 参考答案非穷举，其他答案可用 AI 判定。",
     "answers": [
@@ -13676,7 +13686,7 @@ const generated = [
     "id": "extra-23-7"
   },
   {
-    "title": "说出一位中国古代著名发明家或科学家。",
+    "title": "说出一位中国古代发明家或科学家。",
     "category": "历史",
     "hint": "包括古代至明清的科技人物，如张衡、祖冲之、沈括。 参考答案非穷举，其他答案可用 AI 判定。",
     "answers": [
@@ -14953,8 +14963,8 @@ make('美食 · FOOD','说出一个中国传统八大菜系。','输入菜系名
 make('地理 · GEOGRAPHY','说出一个与中国陆地接壤的国家。','仅计算陆地邻国，不含隔海相望的国家。','俄罗斯|Russia;印度|India;朝鲜|North Korea;蒙古|Mongolia;越南|Vietnam;巴基斯坦|Pakistan;缅甸|Myanmar|Burma;尼泊尔|Nepal;哈萨克斯坦|Kazakhstan;老挝|Laos;阿富汗|Afghanistan;不丹|Bhutan;吉尔吉斯斯坦|Kyrgyzstan;塔吉克斯坦|Tajikistan'),
 make('文化 · CULTURE','说出一个十二生肖中的动物。','请输入生肖的单字名称或英文。','龙|Dragon;虎|Tiger;兔|Rabbit;鼠|Rat|Mouse;牛|Ox;马|Horse;蛇|Snake;猴|Monkey;狗|Dog;猪|Pig;羊|Goat|Sheep;鸡|Rooster|Chicken'),
 make('地理 · GEOGRAPHY','说出一个非洲国土面积前十的国家。','按国家总面积排序；不计海外属地。','埃塞俄比亚|Ethiopia;南非|South Africa;阿尔及利亚|Algeria;苏丹|Sudan;刚果民主共和国|刚果金|DR Congo|Democratic Republic of the Congo;利比亚|Libya;乍得|Chad;尼日尔|Niger;安哥拉|Angola;马里|Mali'),
-make('文学 · LITERATURE','说出一位「建安七子」。','使用常见姓名。','孔融|Kong Rong;王粲|Wang Can;陈琳|Chen Lin;刘桢|Liu Zhen;徐干|Xu Gan;阮瑀|Ruan Yu;应玚|Ying Yang'),
-make('音乐 · MUSIC','说出一位常见的巴洛克时期作曲家。','本题收录 12 位作曲家；使用姓氏或常用中文译名。','巴赫|Bach|Johann Sebastian Bach;维瓦尔第|Vivaldi;亨德尔|Handel;帕赫贝尔|Pachelbel;蒙特威尔第|Monteverdi;泰勒曼|Telemann;斯卡拉蒂|Scarlatti;普赛尔|Purcell;科雷利|Corelli;拉莫|Rameau;吕利|Lully;库普兰|Couperin'),
+make('文学 · LITERATURE','说出一位「建安七子」。','填写姓名。','孔融|Kong Rong;王粲|Wang Can;陈琳|Chen Lin;刘桢|Liu Zhen;徐干|Xu Gan;阮瑀|Ruan Yu;应玚|Ying Yang'),
+make('音乐 · MUSIC','说出一位巴洛克时期作曲家。','本题收录 12 位作曲家；使用姓氏或常用中文译名。','巴赫|Bach|Johann Sebastian Bach;维瓦尔第|Vivaldi;亨德尔|Handel;帕赫贝尔|Pachelbel;蒙特威尔第|Monteverdi;泰勒曼|Telemann;斯卡拉蒂|Scarlatti;普赛尔|Purcell;科雷利|Corelli;拉莫|Rameau;吕利|Lully;库普兰|Couperin'),
 make('地理 · GEOGRAPHY','说出一个中美洲国家。','这里指墨西哥以南、哥伦比亚以北的七国。','巴拿马|Panama;哥斯达黎加|Costa Rica;危地马拉|Guatemala;洪都拉斯|Honduras;尼加拉瓜|Nicaragua;萨尔瓦多|El Salvador;伯利兹|Belize'),
 make('历史 · HISTORY','说出一个「战国七雄」。','填写国名即可。','秦|秦国|Qin;楚|楚国|Chu;齐|齐国|Qi;赵|赵国|Zhao;魏|魏国|Wei;燕|燕国|Yan;韩|韩国|Han'),
 make('地理 · GEOGRAPHY','说出一个加拿大的省或地区。','包括十个省及三个地区。','安大略|安大略省|Ontario;魁北克|魁北克省|Quebec;不列颠哥伦比亚|卑诗省|British Columbia|BC;艾伯塔|阿尔伯塔|Alberta;新斯科舍|Nova Scotia;曼尼托巴|Manitoba;萨斯喀彻温|Saskatchewan;纽芬兰与拉布拉多|Newfoundland and Labrador;新不伦瑞克|New Brunswick;爱德华王子岛|Prince Edward Island;育空|Yukon;西北地区|Northwest Territories;努纳武特|Nunavut'),
