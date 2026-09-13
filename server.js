@@ -21,8 +21,9 @@ http.createServer(async(req,res)=>{
       if(!data||typeof data!=='object'||Array.isArray(data)){json(res,400,{error:'请求必须是JSON对象。'});return}
       if(path==='/api/feedback'){json(res,200,await feedbackStore.write(data));return}
       if(!ai.key){json(res,503,{error:'尚未配置 DeepSeek 密钥。'});return}
+      if(path==='/api/review'){json(res,200,await ai.review(data));return}
       if(path==='/api/round'){
-        if(data.exclude!==undefined&&(!Array.isArray(data.exclude)||data.exclude.length>100||data.exclude.some(s=>typeof s!=='string'||s.length>200))){json(res,400,{error:'题目记录格式不正确。'});return}
+        if(data.exclude!==undefined&&(!Array.isArray(data.exclude)||data.exclude.length>2000||data.exclude.some(s=>typeof s!=='string'||s.length>200))){json(res,400,{error:'题目记录格式不正确。'});return}
         json(res,200,{questions:await ai.round(data.exclude)});return;
       }
       if(path==='/api/judge'){

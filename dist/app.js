@@ -1,4 +1,5 @@
-import {createVoteControls,exportFeedback} from './feedback-ui.js';
+import {eligibleQuestions,readFeedback} from './feedback-data.js';
+import {createVoteControls,exportFeedback,restoreBlockedQuestions} from './feedback-ui.js';
 import {knownInvalidAnswer} from './eligibility.js';
 import {fullScoreAnswers} from './scoring.js';
 import {bank,findAnswer,pickRound,chooseReplacement} from './bank.js';
@@ -16,7 +17,9 @@ async function api(path,body){
  let data;try{data=await response.json()}catch{throw new Error('AI 服务暂时不可用，请重试或跳过。')}
  if(!response.ok)throw new Error(data.error||'AI 暂时不可用，请重试或跳过。');return data;
 }
-function start(next=pickRound(bank,seen)){
+function availableBank(){try{return eligibleQuestions(bank,readFeedback(localStorage))}catch{return bank}}
+function start(next){
+ if(!next){const pool=availableBank();if(pool.length<7){notice('可用题目不足七题，请撤销部分题目点踩后再开局。',true);return}next=pickRound(pool,seen)}
  if(busy)return;questions=next;index=0;records=[];swapped=[];locked=false;$('results').hidden=true;$('play').hidden=false;render();
 }
 function render(){
@@ -68,7 +71,7 @@ function renderReferences(container,q,all=false){
 }
 function replaceCurrent(){
  if(busy||locked||swapped.length>=2||$('play').hidden)return;
- const old=questions[index];const replacement=chooseReplacement(bank,questions,swapped,seen);
+ const old=questions[index];const replacement=chooseReplacement(availableBank(),questions,swapped,seen);
  if(!replacement){notice('暂时没有可换的新题，换题次数未扣除。',true);return}
  swapped.push(old);questions[index]=replacement;render();
  $('replaced-title').textContent=old.title;
@@ -90,10 +93,11 @@ $('help').onclick=()=>$('rules').showModal();$('close').onclick=$('gotit').oncli
 $('ai-round').onclick=async()=>{
  if(busy)return;setBusy(true);$('ai-status').textContent='正在生成 7 道新题，通常需要十几秒…';
  if($('again'))$('again').disabled=true;
- try{const exclude=[...new Set([...seenTitles,...questions.map(q=>q.title)])].slice(-100);const data=await api('round',{exclude});setBusy(false);start(data.questions);$('ai-status').textContent='AI 新题已就绪 · 评分为估计值'}
+ try{const blocked=readFeedback(localStorage).filter(r=>r.kind==='question'&&r.vote===-1).map(r=>r.question);const exclude=[...new Set([...seenTitles,...questions.map(q=>q.title),...blocked])].slice(-2000);const data=await api('round',{exclude});setBusy(false);const accepted=eligibleQuestions(data.questions,readFeedback(localStorage));if(accepted.length!==7)throw Error('AI 生成了已屏蔽的题目，请重试。');start(accepted);$('ai-status').textContent='AI 新题已就绪 · 评分为估计值'}
  catch(e){$('ai-status').textContent=e.name==='TimeoutError'?'生成超时，原有游戏已保留。':e.message}
  finally{setBusy(false);if($('again'))$('again').disabled=false}
 };
+const restore=document.createElement('button');restore.className='quiet';restore.textContent='恢复屏蔽题目';$('export-feedback').before(restore);restore.onclick=()=>{try{const count=restoreBlockedQuestions();$('feedback-storage-note').textContent=`已恢复 ${count} 道题的后续抽题资格。`}catch{$('feedback-storage-note').textContent='恢复失败，请允许本地存储后重试。'}};
 $('export-feedback').onclick=()=>{const count=exportFeedback();$('feedback-storage-note').textContent=`已导出 ${count} 条反馈；反馈不会自动修改分数。`};
 $('bank-count').textContent=`${bank.length} 道题 · 优先未玩过`;
 start();

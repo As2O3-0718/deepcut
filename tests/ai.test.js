@@ -56,3 +56,11 @@ test('network and API errors do not expose upstream bodies or keys',async()=>{
  await assert.rejects(completeJSON({key:'private-key',fetcher:async()=>{throw Error('private-key')}}),e=>!e.message.includes('private-key'));
 });
 test('question IDs are unique',()=>assert.equal(new Set(bank.map(q=>q.id)).size,bank.length));
+test('review independently checks preset answers and validates requests and output',async()=>{
+ let calls=0;const ai=await engine(async()=>{calls++;return {conclusion:'建议修订',explanation:'相对满分不代表绝对冷门。'}},{minIntervalMs:0});
+ const request={questionId:'base-0',answer:'巴西',score:100,concern:'冷门度不合理'};
+ assert.equal((await ai.review(request)).conclusion,'建议修订');assert.equal(calls,1);assert.equal(ai.cache.size,0);
+ await assert.rejects(ai.review({...request,concern:'bad'}),e=>e.status===400);assert.equal(calls,1);
+ await assert.rejects(ai.review({...request,questionId:'missing'}),e=>e.status===404);
+ ai.complete=async()=>({conclusion:'肯定正确',explanation:'bad'});await assert.rejects(ai.review(request));
+});

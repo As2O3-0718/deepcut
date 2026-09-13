@@ -21,3 +21,10 @@ test('feedback persists ordered concurrent writes and withdrawal across restart'
  await assert.rejects(store.write({...base,vote:5}),{status:400});
  }finally{await rm(dir,{recursive:true,force:true})}
 });
+import {eligibleQuestions} from '../dist/feedback-data.js';
+test('question dislikes exclude matching titles and withdrawal restores eligibility',()=>{
+ const pool=[{id:'one',title:'测试题'},{id:'new-id',title:'测试题'},{id:'two',title:'其他题'}];
+ const rows=applyFeedback([],{...base,vote:-1});assert.deepEqual(eligibleQuestions(pool,rows).map(q=>q.id),['two']);
+ assert.equal(eligibleQuestions(pool,applyFeedback(rows,{...base,vote:0})).length,3);
+ assert.equal(eligibleQuestions(pool,[{...base,kind:'reference',vote:-1}]).length,3);
+});

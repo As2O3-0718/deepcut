@@ -12,3 +12,5 @@ export function applyFeedback(records,value){
  if(r.vote!==0)next.push(r);return next.slice(-2000);
 }
 export function readFeedback(storage){try{const data=JSON.parse(storage.getItem(FEEDBACK_STORAGE)||'[]');if(!Array.isArray(data))return[];return data.slice(-2000).map(validateFeedback).filter(r=>r.vote!==0)}catch{return[]}}
+
+export function eligibleQuestions(pool,feedback){const blocked=new Set(feedback.filter(r=>r.kind==='question'&&r.vote===-1).map(r=>r.question));return pool.filter(q=>!blocked.has(q.title))}
