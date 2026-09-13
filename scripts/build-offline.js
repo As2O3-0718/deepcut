@@ -8,6 +8,7 @@ const scoring=fs.readFileSync('dist/scoring.js','utf8').replace(/export /g,'');
 const eligibility=fs.readFileSync('dist/eligibility.js','utf8').replace(/export /g,'');
 const feedbackData=fs.readFileSync('dist/feedback-data.js','utf8').replace(/export /g,'');
 const feedbackUI=fs.readFileSync('dist/feedback-ui.js','utf8').replace(/^\s*import[^;]+;\s*/gm,'').replace(/export /g,'');
-const script='(()=>{\n'+feedbackData+'\n'+feedbackUI+'\n'+eligibility+'\n'+scoring+'\n'+generated+'\n'+bank+'\n'+app+'\n})();';new vm.Script(script);
+const apiClient="const hasGameAPI=false,isLocalAPI=false;function gameFetch(){return Promise.reject(new Error('离线版不提供 AI'))}\n";
+const script='(()=>{\n'+apiClient+feedbackData+'\n'+feedbackUI+'\n'+eligibility+'\n'+scoring+'\n'+generated+'\n'+bank+'\n'+app+'\n})();';new vm.Script(script);
 html=html.replace('<link rel="stylesheet" href="style.css">',()=>'<style>'+css+'</style>').replace('<script type="module" src="app.js"></script>',()=>'<script>'+script.replace(/<\/script/gi,'<\\/script')+'</script>').replace('href="./"','href=""');
 fs.writeFileSync('offline/Deepcut.html',html);console.log('Offline game regenerated without keys or network dependencies.');

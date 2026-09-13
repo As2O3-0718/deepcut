@@ -64,3 +64,6 @@ test('review independently checks preset answers and validates requests and outp
  await assert.rejects(ai.review({...request,questionId:'missing'}),e=>e.status===404);
  ai.complete=async()=>({conclusion:'肯定正确',explanation:'bad'});await assert.rejects(ai.review(request));
 });
+test('upstream redirects are rejected without forwarding the API key',async()=>{
+ let calls=0;await assert.rejects(completeJSON({key:'test',system:'json',user:{},fetcher:async(url,options)=>{calls++;assert.equal(options.redirect,'manual');return {ok:false,status:302}}}));assert.equal(calls,1);
+});

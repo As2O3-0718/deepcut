@@ -45,9 +45,9 @@ npm run offline
 
 ## 线上部署状态
 
-修改经验证后会提交并推送到 GitHub，GitHub Pages 自动同步题库和界面。AI 后端仍按要求仅在本机运行，尚未配置线上 AI 后端。GitHub Pages 本身不能保存密钥或运行本项目的 Node 后端。
+修改经验证后会提交并推送到 GitHub，GitHub Pages 自动同步题库和界面。AI 后端现已获授权部署到 Cloudflare Workers，线上地址配置在 `dist/api-client.js`。GitHub Pages 本身不能保存密钥或运行本项目的 Node 后端。
 
-仓库已有GitHub Actions配置：未来推送到main会验证并发布dist目录；静态网页会自动禁用本机AI入口。部署服务器时需要另行配置密钥和访问控制，不能将当前本机服务直接暴露到公网。
+仓库已有GitHub Actions配置：未来推送到main会验证并发布dist目录；静态网页使用已配置的 Cloudflare AI 接口。部署服务器时需要另行配置密钥和访问控制，不能将当前本机服务直接暴露到公网。
 
 玩法参考：https://krillion.io/ 。未使用原站源代码、品牌素材或私人题库。
 DeepSeek API 文档：https://api-docs.deepseek.com/
@@ -69,3 +69,9 @@ DeepSeek API 文档：https://api-docs.deepseek.com/
 点踩题目后，当前浏览器后续开局、换题及 AI 新题会避开同题（按题目文字识别），本轮不强制换题；撤销或改赞恢复。答案点踩标记争议，可选择原因；本机版可点击 AI 复核，消耗一次受频率限制的调用，展示具体结论与修订建议，不直接覆盖题库或本轮分数。AI 复核不等于人工事实核验。
 
 题干与范围提示不以“知名／常见／著名／热门”作为答案有效性的门槛；类别、地域、年代等客观限制仍适用。存量题和本机缓存题在加载时清理这些表述，新生成题也应用相同处理。新近发行或小众作品不会仅因不知名被判错；AI 无法核实存在或类别时返回无法确认，允许重答。此规则更新会使旧判定缓存失效。
+
+## 在线 AI（Cloudflare Workers）
+
+用户已授权上线 AI 后端，GitHub Pages 保留原地址。`cloud/worker.js` 复用本机判题逻辑，使用 Durable Object 保存动态题、缓存和全局限流状态；所有线上玩家共用一个请求队列入口（忙时返回重试），调用开始至少间隔 2 秒。网页调用使用拥有者的 DeepSeek 额度，无每日上限。跨域仅允许 GitHub Pages 来源；来源检查不是身份认证，公网接口可被非浏览器客户端模拟调用。
+
+部署：`npx wrangler login`、`npx wrangler deploy`，再通过 `npx wrangler secret put DEEPSEEK_API_KEY` 保存密钥。密钥只能是 Cloudflare Secret，不得写入源码或网页；`dist/api-client.js` 只存公开后端 URL。本机仍使用 `.env.local`，离线 HTML 不调用线上 AI。公网反馈仍保存当前浏览器，不集中上传。

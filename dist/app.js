@@ -1,3 +1,4 @@
+import {hasGameAPI,isLocalAPI,gameFetch} from './api-client.js';
 import {eligibleQuestions,readFeedback} from './feedback-data.js';
 import {createVoteControls,exportFeedback,restoreBlockedQuestions} from './feedback-ui.js';
 import {knownInvalidAnswer} from './eligibility.js';
@@ -13,7 +14,7 @@ function remember(q){seenTitles=seenTitles.filter(x=>x!==q.title);seenTitles.pus
 function setBusy(value){busy=value;$('answer').disabled=value||locked;$('submit').disabled=value||locked;$('skip').disabled=value;$('swap').disabled=value||locked||swapped.length>=2;$('swap').textContent=`换题（剩 ${2-swapped.length}/2）`; $('ai-round').disabled=value||!aiAvailable||(records.length>0||swapped.length>0)&&!$('play').hidden;$('submit').textContent=value?'AI 正在判断…':'下潜验证 ↓'}
 function notice(text,error=false){$('feedback').className='';const p=document.createElement('p');p.className=error?'error':'hint';p.textContent=text;$('feedback').replaceChildren(p)}
 async function api(path,body){
- const response=await fetch('/api/'+path,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body),signal:AbortSignal.timeout(60000)});
+ const response=await gameFetch('/api/'+path,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body),signal:AbortSignal.timeout(60000)});
  let data;try{data=await response.json()}catch{throw new Error('AI 服务暂时不可用，请重试或跳过。')}
  if(!response.ok)throw new Error(data.error||'AI 暂时不可用，请重试或跳过。');return data;
 }
@@ -101,12 +102,12 @@ const restore=document.createElement('button');restore.className='quiet';restore
 $('export-feedback').onclick=()=>{const count=exportFeedback();$('feedback-storage-note').textContent=`已导出 ${count} 条反馈；反馈不会自动修改分数。`};
 $('bank-count').textContent=`${bank.length} 道题 · 优先未玩过`;
 start();
-if(['127.0.0.1','localhost'].includes(location.hostname)){
- fetch('/api/health',{signal:AbortSignal.timeout(3000)}).then(r=>r.ok?r.json():null).then(data=>{
+if(hasGameAPI){
+ gameFetch('/api/health',{signal:AbortSignal.timeout(3000)}).then(r=>r.ok?r.json():null).then(data=>{
   aiAvailable=!!data?.enabled;$('ai-judge').disabled=!aiAvailable;$('ai-judge').checked=aiAvailable;
-  $('ai-status').textContent=aiAvailable?`本机 AI 已连接 · 调用间隔至少 ${data.minIntervalSeconds} 秒 · 无每日上限`:'AI 未配置，题库模式仍可使用';setBusy(false);
+  $('ai-status').textContent=aiAvailable?`${isLocalAPI?'本机':'在线'} AI 已连接 · 调用间隔至少 ${data.minIntervalSeconds} 秒 · 无每日上限`:'AI 未配置，题库模式仍可使用';setBusy(false);
  }).catch(()=>{$('ai-status').textContent='题库模式 · AI 服务未启动'});
-}else{$('ai-status').textContent='题库模式 · AI 功能需运行本机版'}
+}else{$('ai-status').textContent='题库模式 · 在线 AI 尚未部署'}
 const context=document.modelContext??navigator.modelContext;
 if(context?.registerTool){const tools=[
  {name:'get_game_state',description:'Read the current question, score and AI availability.',annotations:{readOnlyHint:true},inputSchema:{type:'object',properties:{}},execute:async()=>({question:$('play').hidden?null:questions[index].title,round:index+1,answered:locked,busy,aiAvailable,swapsRemaining:2-swapped.length,records})},

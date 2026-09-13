@@ -1,0 +1,10 @@
+{
+  "name": "deepcut-api",
+  "main": "cloud/worker.js",
+  "compatibility_date": "2026-09-13",
+  "compatibility_flags": ["nodejs_compat"],
+  "workers_dev": true,
+  "vars": {"ALLOWED_ORIGIN": "https://as2o3-0718.github.io", "DEEPSEEK_MODEL": "deepseek-flash"},
+  "durable_objects": {"bindings": [{"name": "GAME", "class_name": "GameService"}]},
+  "migrations": [{"tag": "v1", "new_sqlite_classes": ["GameService"]}]
+}
