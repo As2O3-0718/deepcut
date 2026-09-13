@@ -75,3 +75,5 @@ DeepSeek API 文档：https://api-docs.deepseek.com/
 用户已授权上线 AI 后端，GitHub Pages 保留原地址。`cloud/worker.js` 复用本机判题逻辑，使用 Durable Object 保存动态题、缓存和全局限流状态；所有线上玩家共用一个请求队列入口（忙时返回重试），调用开始至少间隔 2 秒。网页调用使用拥有者的 DeepSeek 额度，无每日上限。跨域仅允许 GitHub Pages 来源；来源检查不是身份认证，公网接口可被非浏览器客户端模拟调用。
 
 部署：`npx wrangler login`、`npx wrangler deploy`，再通过 `npx wrangler secret put DEEPSEEK_API_KEY` 保存密钥。密钥只能是 Cloudflare Secret，不得写入源码或网页；`dist/api-client.js` 只存公开后端 URL。本机仍使用 `.env.local`，离线 HTML 不调用线上 AI。公网反馈仍保存当前浏览器，不集中上传。
+
+AI 新一轮一次生成 10 道候选，逐题验证并过滤重复，保留有效新题。不足七题时从题库中排除本机近期题及屏蔽题后补齐，页面明确显示 AI 新题和题库补充数量，不增加额外 API 调用。只有不重复可用题确实不足七道时才提示失败。

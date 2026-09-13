@@ -67,3 +67,10 @@ test('review independently checks preset answers and validates requests and outp
 test('upstream redirects are rejected without forwarding the API key',async()=>{
  let calls=0;await assert.rejects(completeJSON({key:'test',system:'json',user:{},fetcher:async(url,options)=>{calls++;assert.equal(options.redirect,'manual');return {ok:false,status:302}}}));assert.equal(calls,1);
 });
+test('AI round keeps novel candidates and fills duplicate slots without extra calls',async()=>{
+ let calls=0;const ai=await engine(async()=>{calls++;return {questions:[bank[0],fixture,fixture,{title:'bad'}]}});
+ const round=await ai.round([bank[1].title]);assert.equal(round.length,7);assert.equal(calls,1);assert.equal(new Set(round.map(q=>q.title)).size,7);assert.ok(!round.some(q=>q.title===bank[1].title));assert.equal(round.filter(q=>!q.roundFallback).length,1);assert.equal(ai.dynamic.size,1);
+});
+test('all duplicate AI output produces an explicitly marked fallback round',async()=>{
+ const ai=await engine(async()=>({questions:[bank[0],bank[0]]}));const round=await ai.round();assert.equal(round.length,7);assert.ok(round.every(q=>q.roundFallback));
+});

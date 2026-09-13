@@ -15081,7 +15081,7 @@ $('help').onclick=()=>$('rules').showModal();$('close').onclick=$('gotit').oncli
 $('ai-round').onclick=async()=>{
  if(busy)return;setBusy(true);$('ai-status').textContent='正在生成 7 道新题，通常需要十几秒…';
  if($('again'))$('again').disabled=true;
- try{const blocked=readFeedback(localStorage).filter(r=>r.kind==='question'&&r.vote===-1).map(r=>r.question);const exclude=[...new Set([...seenTitles,...questions.map(q=>q.title),...blocked])].slice(-2000);const data=await api('round',{exclude});setBusy(false);const accepted=eligibleQuestions(data.questions,readFeedback(localStorage));if(accepted.length!==7)throw Error('AI 生成了已屏蔽的题目，请重试。');start(accepted);$('ai-status').textContent='AI 新题已就绪 · 评分为估计值'}
+ try{const blocked=readFeedback(localStorage).filter(r=>r.kind==='question'&&r.vote===-1).map(r=>r.question);const exclude=[...new Set([...seenTitles,...questions.map(q=>q.title),...blocked])].slice(-2000);const data=await api('round',{exclude});setBusy(false);const accepted=eligibleQuestions(data.questions,readFeedback(localStorage));if(accepted.length!==7)throw Error('AI 生成了已屏蔽的题目，请重试。');start(accepted);const fallback=accepted.filter(q=>q.roundFallback).length;$('ai-status').textContent=fallback?`本轮已就绪 · AI 新题 ${7-fallback} 道，题库补充 ${fallback} 道（已过滤重复题）`:'AI 新题已就绪 · 评分为估计值'}
  catch(e){$('ai-status').textContent=e.name==='TimeoutError'?'生成超时，原有游戏已保留。':e.message}
  finally{setBusy(false);if($('again'))$('again').disabled=false}
 };
