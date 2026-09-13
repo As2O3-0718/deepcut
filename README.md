@@ -77,3 +77,5 @@ DeepSeek API 文档：https://api-docs.deepseek.com/
 部署：`npx wrangler login`、`npx wrangler deploy`，再通过 `npx wrangler secret put DEEPSEEK_API_KEY` 保存密钥。密钥只能是 Cloudflare Secret，不得写入源码或网页；`dist/api-client.js` 只存公开后端 URL。本机仍使用 `.env.local`，离线 HTML 不调用线上 AI。公网反馈仍保存当前浏览器，不集中上传。
 
 AI 新一轮一次生成 10 道候选，逐题验证并过滤重复，保留有效新题。不足七题时从题库中排除本机近期题及屏蔽题后补齐，页面明确显示 AI 新题和题库补充数量，不增加额外 API 调用。只有不重复可用题确实不足七道时才提示失败。
+
+更新：AI 新一轮不再用题库题兜底。保留有效候选后自动补生成一次，最多两次 API 调用；仍不足七道新题时保留当前游戏并说明失败。浏览器保留最近 2000 个题目标题，按 ID 与清理措辞后的标题共同识别已玩题；请求 AI 时也补充历史 ID 对应的题库标题。

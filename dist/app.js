@@ -8,19 +8,19 @@ const $=id=>document.getElementById(id);
 let questions=[],index=0,records=[],locked=false,busy=false,aiAvailable=false;
 let swapped=[];
 let seen=[];let seenTitles=[];
-try{const saved=JSON.parse(localStorage.getItem("deepcut-titles-v2")||"[]");if(Array.isArray(saved))seenTitles=saved.filter(x=>typeof x==="string").slice(-100)}catch{}
+try{const saved=JSON.parse(localStorage.getItem("deepcut-titles-v2")||"[]");if(Array.isArray(saved))seenTitles=saved.filter(x=>typeof x==="string").slice(-2000)}catch{}
 try{const saved=JSON.parse(localStorage.getItem('deepcut-seen-v2')||'[]');if(Array.isArray(saved))seen=saved.filter(x=>typeof x==='string').slice(-2000)}catch{}
-function remember(q){seenTitles=seenTitles.filter(x=>x!==q.title);seenTitles.push(q.title);seenTitles=seenTitles.slice(-100);try{localStorage.setItem("deepcut-titles-v2",JSON.stringify(seenTitles))}catch{}seen=seen.filter(x=>x!==q.id);seen.push(q.id);if(seen.length>2000)seen.shift();try{localStorage.setItem('deepcut-seen-v2',JSON.stringify(seen))}catch{}}
+function remember(q){seenTitles=seenTitles.filter(x=>x!==q.title);seenTitles.push(q.title);seenTitles=seenTitles.slice(-2000);try{localStorage.setItem("deepcut-titles-v2",JSON.stringify(seenTitles))}catch{}seen=seen.filter(x=>x!==q.id);seen.push(q.id);if(seen.length>2000)seen.shift();try{localStorage.setItem('deepcut-seen-v2',JSON.stringify(seen))}catch{}}
 function setBusy(value){busy=value;$('answer').disabled=value||locked;$('submit').disabled=value||locked;$('skip').disabled=value;$('swap').disabled=value||locked||swapped.length>=2;$('swap').textContent=`换题（剩 ${2-swapped.length}/2）`; $('ai-round').disabled=value||!aiAvailable||(records.length>0||swapped.length>0)&&!$('play').hidden;$('submit').textContent=value?'AI 正在判断…':'下潜验证 ↓'}
 function notice(text,error=false){$('feedback').className='';const p=document.createElement('p');p.className=error?'error':'hint';p.textContent=text;$('feedback').replaceChildren(p)}
 async function api(path,body){
- const response=await gameFetch('/api/'+path,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body),signal:AbortSignal.timeout(60000)});
+ const response=await gameFetch('/api/'+path,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body),signal:AbortSignal.timeout(path==='round'?125000:60000)});
  let data;try{data=await response.json()}catch{throw new Error('AI 服务暂时不可用，请重试或跳过。')}
  if(!response.ok)throw new Error(data.error||'AI 暂时不可用，请重试或跳过。');return data;
 }
 function availableBank(){try{return eligibleQuestions(bank,readFeedback(localStorage))}catch{return bank}}
 function start(next){
- if(!next){const pool=availableBank();if(pool.length<7){notice('可用题目不足七题，请撤销部分题目点踩后再开局。',true);return}next=pickRound(pool,seen)}
+ if(!next){const pool=availableBank();if(pool.length<7){notice('可用题目不足七题，请撤销部分题目点踩后再开局。',true);return}next=pickRound(pool,seen,seenTitles)}
  if(busy)return;questions=next;index=0;records=[];swapped=[];locked=false;$('results').hidden=true;$('play').hidden=false;render();
 }
 function render(){
@@ -72,7 +72,7 @@ function renderReferences(container,q,all=false){
 }
 function replaceCurrent(){
  if(busy||locked||swapped.length>=2||$('play').hidden)return;
- const old=questions[index];const replacement=chooseReplacement(availableBank(),questions,swapped,seen);
+ const old=questions[index];const replacement=chooseReplacement(availableBank(),questions,swapped,seen,seenTitles);
  if(!replacement){notice('暂时没有可换的新题，换题次数未扣除。',true);return}
  swapped.push(old);questions[index]=replacement;render();
  $('replaced-title').textContent=old.title;
@@ -92,9 +92,9 @@ $('form').onsubmit=e=>{e.preventDefault();void submit($('answer').value)};
 $('skip').onclick=()=>{if(!busy)finish(null)};
 $('help').onclick=()=>$('rules').showModal();$('close').onclick=$('gotit').onclick=()=>$('rules').close();
 $('ai-round').onclick=async()=>{
- if(busy)return;setBusy(true);$('ai-status').textContent='正在生成 7 道新题，通常需要十几秒…';
+ if(busy)return;setBusy(true);$('ai-status').textContent='正在生成 7 道新题；若有重复会自动补生成，最多约两分钟…';
  if($('again'))$('again').disabled=true;
- try{const blocked=readFeedback(localStorage).filter(r=>r.kind==='question'&&r.vote===-1).map(r=>r.question);const exclude=[...new Set([...seenTitles,...questions.map(q=>q.title),...blocked])].slice(-2000);const data=await api('round',{exclude});setBusy(false);const accepted=eligibleQuestions(data.questions,readFeedback(localStorage));if(accepted.length!==7)throw Error('AI 生成了已屏蔽的题目，请重试。');start(accepted);const fallback=accepted.filter(q=>q.roundFallback).length;$('ai-status').textContent=fallback?`本轮已就绪 · AI 新题 ${7-fallback} 道，题库补充 ${fallback} 道（已过滤重复题）`:'AI 新题已就绪 · 评分为估计值'}
+ try{const blocked=readFeedback(localStorage).filter(r=>r.kind==='question'&&r.vote===-1).map(r=>r.question);const exclude=[...new Set([...seenTitles,...bank.filter(q=>seen.includes(q.id)).map(q=>q.title),...questions.map(q=>q.title),...blocked])].slice(-2000);const data=await api('round',{exclude});setBusy(false);const accepted=eligibleQuestions(data.questions,readFeedback(localStorage));if(accepted.length!==7)throw Error('AI 生成了已屏蔽的题目，请重试。');start(accepted);const fallback=accepted.filter(q=>q.roundFallback).length;$('ai-status').textContent=fallback?`本轮已就绪 · AI 新题 ${7-fallback} 道，题库补充 ${fallback} 道（已过滤重复题）`:'AI 新题已就绪 · 评分为估计值'}
  catch(e){$('ai-status').textContent=e.name==='TimeoutError'?'生成超时，原有游戏已保留。':e.message}
  finally{setBusy(false);if($('again'))$('again').disabled=false}
 };

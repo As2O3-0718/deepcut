@@ -1,4 +1,4 @@
-import {calibrateQuestion} from './scoring.js';
+import {calibrateQuestion,normalizeQuestionWording} from './scoring.js';
 import generated from './generated.js';
 // Each row: Chinese canonical answer | English / accepted aliases. Order is curated from familiar to uncommon.
 const make=(category,title,hint,rows)=>({category,title,hint,answers:rows.split(';').map((row,i,all)=>{const [name,...aliases]=row.split('|');return{name,aliases,score:Math.round(10+90*i/(all.length-1))}})});
@@ -28,13 +28,14 @@ make('科学 · SCIENCE','说出一种稀有气体元素。','周期表第 18 �
 export const bank=[...original.map((q,i)=>({...q,id:'base-'+i,source:'curated'})),...generated].map(calibrateQuestion);
 export const normalize=s=>s.normalize('NFKC').toLowerCase().replace(/[\s·・.\-']/g,'');
 export function findAnswer(question,value){const key=normalize(value);return key?question.answers.find(a=>[a.name,...a.aliases].some(s=>normalize(s)===key)):undefined;}
-export function pickRound(source=bank,seen=[]){
+export const questionHistoryKey=title=>typeof title!=='string'?'':normalize(normalizeQuestionWording({title}).title).replace(/[，。！？、：；“”「」（）(),!?;:"\s]/g,'');
+export function pickRound(source=bank,seen=[],seenTitles=[]){
  const shuffle=items=>{items=[...items];for(let i=items.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[items[i],items[j]]=[items[j],items[i]]}return items};
- const known=new Set(seen);const fresh=shuffle(source.filter(q=>!known.has(q.id)));const repeats=source.filter(q=>known.has(q.id)).sort((a,b)=>seen.indexOf(a.id)-seen.indexOf(b.id));
+ const known=new Set(seen),titles=new Set(seenTitles.map(questionHistoryKey));const played=q=>known.has(q.id)||titles.has(questionHistoryKey(q.title));const fresh=shuffle(source.filter(q=>!played(q)));const repeats=source.filter(played).sort((a,b)=>seen.indexOf(a.id)-seen.indexOf(b.id));
  return [...fresh,...repeats].slice(0,7);
 }
 
-export function chooseReplacement(source,active,replaced,seen=[]){
+export function chooseReplacement(source,active,replaced,seen=[],seenTitles=[]){
  const excluded=[...active,...replaced];const ids=new Set(excluded.map(q=>q.id));const titles=new Set(excluded.map(q=>q.title));
- return pickRound(source.filter(q=>!ids.has(q.id)&&!titles.has(q.title)),seen)[0];
+ return pickRound(source.filter(q=>!ids.has(q.id)&&!titles.has(q.title)),seen,seenTitles)[0];
 }
