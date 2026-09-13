@@ -1,6 +1,8 @@
+import {calibrateQuestion} from './scoring.js';
+import generated from './generated.js';
 // Each row: Chinese canonical answer | English / accepted aliases. Order is curated from familiar to uncommon.
 const make=(category,title,hint,rows)=>({category,title,hint,answers:rows.split(';').map((row,i,all)=>{const [name,...aliases]=row.split('|');return{name,aliases,score:Math.round(10+90*i/(all.length-1))}})});
-export const bank=[
+const original=[
 make('地理 · GEOGRAPHY','说出一个南美洲的主权国家。','按通常地理划分；不包括海外属地。','巴西|Brazil;阿根廷|Argentina;智利|Chile;秘鲁|Peru;哥伦比亚|Colombia;委内瑞拉|Venezuela;厄瓜多尔|Ecuador;乌拉圭|Uruguay;玻利维亚|Bolivia;巴拉圭|Paraguay;圭亚那|Guyana;苏里南|Suriname'),
 make('天文 · SPACE','说出一颗太阳系的行星。','使用八大行星定义；中文或英文名称均可。','地球|Earth;火星|Mars;木星|Jupiter;土星|Saturn;金星|Venus;水星|Mercury;海王星|Neptune;天王星|Uranus'),
 make('文学 · LITERATURE','说出一位「唐宋八大家」。','填写姓名即可。','苏轼|苏东坡|Su Shi;韩愈|Han Yu;柳宗元|Liu Zongyuan;欧阳修|Ouyang Xiu;王安石|Wang Anshi;苏洵|Su Xun;苏辙|Su Zhe;曾巩|Zeng Gong'),
@@ -23,6 +25,16 @@ make('文学 · LITERATURE','说出一位「初唐四杰」。','填写姓名即
 make('地理 · GEOGRAPHY','说出一个中国的自治区。','输入简称或全称均可。','西藏|西藏自治区|Tibet;新疆|新疆维吾尔自治区|Xinjiang;内蒙古|内蒙古自治区|Inner Mongolia;广西|广西壮族自治区|Guangxi;宁夏|宁夏回族自治区|Ningxia'),
 make('科学 · SCIENCE','说出一种稀有气体元素。','周期表第 18 族；接受中文、英文或化学符号。','氦|Helium|He;氖|Neon|Ne;氩|Argon|Ar;氪|Krypton|Kr;氙|Xenon|Xe;氡|Radon|Rn;鿫|Oganesson|Og')
 ];
+export const bank=[...original.map((q,i)=>({...q,id:'base-'+i,source:'curated'})),...generated].map(calibrateQuestion);
 export const normalize=s=>s.normalize('NFKC').toLowerCase().replace(/[\s·・.\-']/g,'');
 export function findAnswer(question,value){const key=normalize(value);return key?question.answers.find(a=>[a.name,...a.aliases].some(s=>normalize(s)===key)):undefined;}
-export function pickRound(source=bank){const items=[...source];for(let i=items.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[items[i],items[j]]=[items[j],items[i]]}return items.slice(0,7)}
+export function pickRound(source=bank,seen=[]){
+ const shuffle=items=>{items=[...items];for(let i=items.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[items[i],items[j]]=[items[j],items[i]]}return items};
+ const known=new Set(seen);const fresh=shuffle(source.filter(q=>!known.has(q.id)));const repeats=source.filter(q=>known.has(q.id)).sort((a,b)=>seen.indexOf(a.id)-seen.indexOf(b.id));
+ return [...fresh,...repeats].slice(0,7);
+}
+
+export function chooseReplacement(source,active,replaced,seen=[]){
+ const excluded=[...active,...replaced];const ids=new Set(excluded.map(q=>q.id));const titles=new Set(excluded.map(q=>q.title));
+ return pickRound(source.filter(q=>!ids.has(q.id)&&!titles.has(q.title)),seen)[0];
+}

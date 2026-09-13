@@ -1,0 +1,10 @@
+import test from 'node:test';import assert from 'node:assert/strict';import{mkdir,mkdtemp,writeFile}from 'node:fs/promises';
+import{GameAI}from '../lib/game-ai.js';import{validateVerdict}from '../lib/ai.js';import{knownInvalidAnswer}from '../dist/eligibility.js';import{bank}from '../dist/bank.js';
+const q=bank.find(q=>q.title==='说出一种印欧语系的语言。');
+const eligibility={isReal:true,isSingle:true,meetsAllConditions:true};
+const candidate={verdict:'valid',eligibility,name:'萨米语',score:88,reason:'符合条件。'};
+test('a real but out-of-scope answer cannot earn points even when model returns valid',()=>{const result=validateVerdict({...candidate,eligibility:{...eligibility,meetsAllConditions:false}});assert.equal(result.verdict,'invalid');assert.equal(result.score,undefined)});
+test('contradictory explanations and missing eligibility checks never receive points',()=>{for(const value of[{...candidate,reason:'萨米语不属于印欧语系，但考虑到用户可能误解，判为valid。'},{...candidate,eligibility:undefined}]){const result=validateVerdict(value);assert.equal(result.verdict,'uncertain');assert.equal(result.score,undefined)}});
+test('known Sami correction works in both languages without blocking an eligible answer',()=>{for(const answer of['萨米','萨米语','Sámi','Saami','Sami language'])assert.equal(knownInvalidAnswer(q,answer).verdict,'invalid');assert.equal(knownInvalidAnswer(q,'德语'),null)});
+test('Sami correction overrides even a current poisoned cache without calling AI',async()=>{const ai=new GameAI({complete:async()=>{throw Error('must not call')}});ai.cache.set(q.id+':萨米',{verdict:'valid',score:88});const result=await ai.judge(q.id,'萨米');assert.equal(result.verdict,'invalid');assert.equal(result.score,undefined);assert.equal(ai.calls,0)});
+test('prior judgment cache is invalidated while preserving daily usage',async()=>{await mkdir('.local',{recursive:true});const dir=await mkdtemp('.local/judgment-test-');const store=dir+'/cache.json';await writeFile(store,JSON.stringify({scoreVersion:2,calls:12,day:'2026-09-13',cache:[['some-answer',{verdict:'valid',score:88}]]}));const ai=new GameAI({store});await ai.load();assert.equal(ai.cache.size,0);assert.equal(ai.calls,12)});

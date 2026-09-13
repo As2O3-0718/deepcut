@@ -1,0 +1,11 @@
+import fs from 'node:fs';import vm from 'node:vm';
+let html=fs.readFileSync('dist/index.html','utf8');
+const css=fs.readFileSync('dist/style.css','utf8').replace(/@import[^;]+;/g,'');
+const generated=fs.readFileSync('dist/generated.js','utf8').replace('export default','const generated =');
+const bank=fs.readFileSync('dist/bank.js','utf8').replace(/^\s*import[^;]+;\s*/gm,'').replace(/export /g,'');
+const app=fs.readFileSync('dist/app.js','utf8').replace(/^\s*import[^;]+;\s*/gm,'');
+const scoring=fs.readFileSync('dist/scoring.js','utf8').replace(/export /g,'');
+const eligibility=fs.readFileSync('dist/eligibility.js','utf8').replace(/export /g,'');
+const script='(()=>{\n'+eligibility+'\n'+scoring+'\n'+generated+'\n'+bank+'\n'+app+'\n})();';new vm.Script(script);
+html=html.replace('<link rel="stylesheet" href="style.css">',()=>'<style>'+css+'</style>').replace('<script type="module" src="app.js"></script>',()=>'<script>'+script.replace(/<\/script/gi,'<\\/script')+'</script>').replace('href="./"','href=""');
+fs.writeFileSync('offline/Deepcut.html',html);console.log('Offline game regenerated without keys or network dependencies.');
