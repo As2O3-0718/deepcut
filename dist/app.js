@@ -100,7 +100,7 @@ start();
 if(['127.0.0.1','localhost'].includes(location.hostname)){
  fetch('/api/health',{signal:AbortSignal.timeout(3000)}).then(r=>r.ok?r.json():null).then(data=>{
   aiAvailable=!!data?.enabled;$('ai-judge').disabled=!aiAvailable;$('ai-judge').checked=aiAvailable;
-  $('ai-status').textContent=aiAvailable?`本机 AI 已连接 · 每日最多 ${data.dailyLimit} 次调用`:'AI 未配置，题库模式仍可使用';setBusy(false);
+  $('ai-status').textContent=aiAvailable?`本机 AI 已连接 · 调用间隔至少 ${data.minIntervalSeconds} 秒 · 无每日上限`:'AI 未配置，题库模式仍可使用';setBusy(false);
  }).catch(()=>{$('ai-status').textContent='题库模式 · AI 服务未启动'});
 }else{$('ai-status').textContent='题库模式 · AI 功能需运行本机版'}
 const context=document.modelContext??navigator.modelContext;

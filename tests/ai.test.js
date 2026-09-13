@@ -2,7 +2,7 @@ import test from 'node:test';import assert from 'node:assert/strict';import{mkdt
 import{AIError,validateQuestions,validateVerdict,completeJSON}from '../lib/ai.js';
 import{GameAI}from '../lib/game-ai.js';import{bank,pickRound}from '../dist/bank.js';
 const fixture={title:'说出一个例子。',category:'测试',hint:'测试限定',answers:Array.from({length:8},(_,i)=>({name:'例'+i,aliases:[],score:10+i}))};
-async function engine(complete,dailyLimit=80){await mkdir('.local',{recursive:true});const dir=await mkdtemp('.local/test-');return new GameAI({key:'test-only',complete,dailyLimit,store:dir+'/cache.json'})}
+async function engine(complete,options={}){await mkdir('.local',{recursive:true});const dir=await mkdtemp('.local/test-');return new GameAI({key:'test-only',complete,...options,store:dir+'/cache.json'})}
 const valid={verdict:'valid',eligibility:{isReal:true,isSingle:true,meetsAllConditions:true},name:'新名称',score:80,reason:'符合条件。'};
 function errorStatus(status){return{ok:false,status}}
 
@@ -23,12 +23,24 @@ test('known answers bypass AI; missing IDs and oversized input never call AI',as
  assert.equal((await ai.judge('base-0','Brazil')).name,'巴西');assert.equal(calls,0);
  await assert.rejects(ai.judge('missing','test'));await assert.rejects(ai.judge('base-0','x'.repeat(121)));assert.equal(calls,0);
 });
-test('a valid answer is cached across restarts and daily budgets remain enforced',async()=>{
- let calls=0;const ai=await engine(async()=>{calls++;return valid},1);
- await ai.judge('base-0','some alias');await ai.judge('base-0','some alias');assert.equal(calls,1);
- const other=new GameAI({key:'test',complete:async()=>{throw Error('must not call')},store:ai.store,dailyLimit:1});await other.load();
- assert.equal((await other.judge('base-0','some alias')).score,80);await assert.rejects(other.judge('base-0','another answer'),e=>e.status===429);
+test('frequency limit survives restart, permits boundary and cached answers, with no daily cap',async()=>{
+ let now=10000,calls=0;const ai=await engine(async()=>{calls++;return valid},{now:()=>now});
+ ai.calls=800;ai.day=new Date().toISOString().slice(0,10);
+ await ai.judge('base-0','some alias');assert.equal(ai.calls,801);
+ await ai.judge('base-0','some alias');assert.equal(calls,1);
+ const other=new GameAI({key:'test',complete:async()=>{calls++;return valid},store:ai.store,now:()=>now});await other.load();
+ assert.equal((await other.judge('base-0','some alias')).score,80);
+ await assert.rejects(other.judge('base-0','another answer'),e=>e.status===429&&e.message.includes('2 秒'));
+ now+=1999;await assert.rejects(other.judge('base-0','another answer'),e=>e.status===429);
+ now++;await other.judge('base-0','another answer');assert.equal(calls,2);
 });
+test('failed upstream requests consume interval and release in-flight lock',async()=>{
+ let now=10000;const ai=await engine(async()=>{throw Error('upstream failure')},{now:()=>now});
+ await assert.rejects(ai.call('',{},1));assert.equal(ai.busy,false);
+ await assert.rejects(ai.call('',{},1),e=>e.status===429);
+ now+=2000;await assert.rejects(ai.call('',{},1),/upstream failure/);
+});
+
 test('unknown alias resolving to a known answer retains its preset score',async()=>{
  const ai=await engine(async()=>({...valid,name:'巴西',score:99}));assert.equal((await ai.judge('base-0','巴西联邦共和国')).score,10);
 });

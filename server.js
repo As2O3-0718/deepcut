@@ -15,7 +15,7 @@ http.createServer(async(req,res)=>{
   try{
     if(path.startsWith('/api/')){
       if(req.headers.origin&&!['http://127.0.0.1:4173','http://localhost:4173'].includes(req.headers.origin)){json(res,403,{error:'不允许跨站调用。'});return}
-      if(path==='/api/health'&&req.method==='GET'){json(res,200,{enabled:!!ai.key,dailyLimit:ai.dailyLimit});return}
+      if(path==='/api/health'&&req.method==='GET'){json(res,200,{enabled:!!ai.key,minIntervalSeconds:ai.minIntervalMs/1000});return}
       if(req.method!=='POST'||!req.headers['content-type']?.startsWith('application/json')){json(res,405,{error:'需要JSON POST请求。'});return}
       const data=await body(req);
       if(!data||typeof data!=='object'||Array.isArray(data)){json(res,400,{error:'请求必须是JSON对象。'});return}
