@@ -68,7 +68,7 @@ test('upstream redirects are rejected without forwarding the API key',async()=>{
  let calls=0;await assert.rejects(completeJSON({key:'test',system:'json',user:{},fetcher:async(url,options)=>{calls++;assert.equal(options.redirect,'manual');return {ok:false,status:302}}}));assert.equal(calls,1);
 });
 test('AI round retains novel candidates and generates missing slots in a bounded second call',async()=>{
- let calls=0;const ai=await engine(async()=>{calls++;return {questions:calls===1?[bank[0],fixture]:Array.from({length:6},(_,i)=>({...fixture,title:'新的集合'+i}))}},{minIntervalMs:0});
+ let calls=0;const ai=await engine(async()=>{calls++;return {questions:calls===1?[bank[0],fixture]:Array.from({length:6},(_,i)=>({...fixture,title:'新的集合'+i,category:'类别'+i}))}},{minIntervalMs:0});
  const round=await ai.round([bank[1].title]);assert.equal(round.length,7);assert.equal(calls,2);assert.equal(new Set(round.map(q=>q.title)).size,7);assert.ok(round.every(q=>!q.roundFallback));assert.equal(ai.dynamic.size,7);
 });
 test('repeated AI output never silently substitutes a bank round',async()=>{
@@ -87,12 +87,16 @@ test('title-only recent history is not treated as the oldest repeat',()=>{
  const source=[{id:'new-id',title:'最近题'},{id:'old-id',title:'旧题'}];assert.equal(pickRound(source,[],['旧题','最近题'])[0].title,'旧题');
 });
 test('other players dynamic questions do not exhaust a player new round pool',async()=>{
- const candidates=Array.from({length:7},(_,i)=>({...fixture,title:'独立主题'+i}));
+ const candidates=Array.from({length:7},(_,i)=>({...fixture,title:'独立主题'+i,category:'类别'+i}));
  const ai=await engine(async()=>({questions:candidates}),{minIntervalMs:0});
  for(const [i,q]of candidates.entries())ai.dynamic.set('other-'+i,{...q,id:'other-'+i});
  const round=await ai.round([]);assert.equal(round.length,7);
 });
 test('player history remains excluded even when shared questions are eligible',async()=>{
- const candidates=Array.from({length:8},(_,i)=>({...fixture,title:'玩家主题'+i}));const ai=await engine(async()=>({questions:candidates}),{minIntervalMs:0});
+ const candidates=Array.from({length:8},(_,i)=>({...fixture,title:'玩家主题'+i,category:'类别'+i}));const ai=await engine(async()=>({questions:candidates}),{minIntervalMs:0});
  const round=await ai.round(['玩家主题0']);assert.equal(round.length,7);assert.ok(round.every(q=>q.title!=='玩家主题0'));
+});
+
+test('single-category generations are rejected rather than published as a round',async()=>{
+ const ai=await engine(async()=>({questions:Array.from({length:10},(_,i)=>({...fixture,title:'影片技法'+i,category:'电影制作与动画技法'}))}),{minIntervalMs:0});await assert.rejects(ai.round(),/至少五类/);assert.equal(ai.dynamic.size,0);
 });

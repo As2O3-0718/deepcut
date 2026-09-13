@@ -1,0 +1,3 @@
+import test from 'node:test';import assert from 'node:assert/strict';import {selectDiverseRound,hasRoundDiversity,categoryGroup} from '../lib/round-diversity.js';
+test('selection covers five categories instead of taking first seven candidates',()=>{const pool=['电影','电影','电影','电影','电影','电影','电影','音乐','游戏','地理','文学','音乐','游戏'].map((category,i)=>({category,title:String(i)}));const selected=selectDiverseRound(pool);assert.ok(hasRoundDiversity(selected));assert.ok(selected.filter(q=>categoryGroup(q)==='影视').length<=2)});
+test('film subcategory labels do not circumvent quota',()=>{assert.equal(categoryGroup({category:'电影制作'}),categoryGroup({category:'动画技法'}));assert.equal(hasRoundDiversity(Array.from({length:7},()=>({category:'电影'}))),false)});
