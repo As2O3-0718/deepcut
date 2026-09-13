@@ -1,3 +1,5 @@
+import {FeedbackStore} from './lib/feedback-store.js';
+const feedbackStore=new FeedbackStore();
 import http from 'node:http';
 import {readFile,readdir} from 'node:fs/promises';
 import {GameAI} from './lib/game-ai.js';
@@ -15,9 +17,10 @@ http.createServer(async(req,res)=>{
       if(req.headers.origin&&!['http://127.0.0.1:4173','http://localhost:4173'].includes(req.headers.origin)){json(res,403,{error:'不允许跨站调用。'});return}
       if(path==='/api/health'&&req.method==='GET'){json(res,200,{enabled:!!ai.key,dailyLimit:ai.dailyLimit});return}
       if(req.method!=='POST'||!req.headers['content-type']?.startsWith('application/json')){json(res,405,{error:'需要JSON POST请求。'});return}
-      if(!ai.key){json(res,503,{error:'尚未配置 DeepSeek 密钥。'});return}
       const data=await body(req);
       if(!data||typeof data!=='object'||Array.isArray(data)){json(res,400,{error:'请求必须是JSON对象。'});return}
+      if(path==='/api/feedback'){json(res,200,await feedbackStore.write(data));return}
+      if(!ai.key){json(res,503,{error:'尚未配置 DeepSeek 密钥。'});return}
       if(path==='/api/round'){
         if(data.exclude!==undefined&&(!Array.isArray(data.exclude)||data.exclude.length>100||data.exclude.some(s=>typeof s!=='string'||s.length>200))){json(res,400,{error:'题目记录格式不正确。'});return}
         json(res,200,{questions:await ai.round(data.exclude)});return;

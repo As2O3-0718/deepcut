@@ -1,3 +1,4 @@
+import {createVoteControls,exportFeedback} from './feedback-ui.js';
 import {knownInvalidAnswer} from './eligibility.js';
 import {fullScoreAnswers} from './scoring.js';
 import {bank,findAnswer,pickRound,chooseReplacement} from './bank.js';
@@ -22,7 +23,7 @@ function render(){
  locked=false;const q=questions[index];remember(q);
  $('round').textContent=`第 ${String(index+1).padStart(2,'0')} / 07 题`;$('total').textContent=records.reduce((s,r)=>s+r.score,0);
  $('progress').innerHTML=questions.map((_,i)=>`<span class="${i<index?'done':i===index?'current':''}" aria-label="第 ${i+1} 题"></span>`).join('');
- $('category').textContent=q.category+(q.source==='ai'?' · AI 题目':'');$('question').textContent=q.title;$('hint').textContent=q.hint;
+ $('category').textContent=q.category+(q.source==='ai'?' · AI 题目':'');$('question').textContent=q.title;$('hint').textContent=q.hint;$('question-votes').replaceChildren(createVoteControls(q));
  $('answer').value='';$('skip').hidden=false;$('swap').hidden=false;$('feedback').replaceChildren();$('feedback').className='';setBusy(false);if(index>0)$('answer').focus();
 }
 async function submit(value){
@@ -38,7 +39,7 @@ async function submit(value){
   if(result.verdict==='valid'){
     finish({name:result.name,score:result.score},{source:'live-ai',reason:result.reason});return{recognized:true,answer:result.name,score:result.score};
   }
-  notice((result.verdict==='uncertain'?'AI 暂时无法确认：':'AI 认为不符合题意：')+result.reason+' 你可以换一个答案，或跳过本题。',true);return{recognized:false};
+  notice((result.verdict==='uncertain'?'AI 暂时无法确认：':'AI 认为不符合题意：')+result.reason+' 你可以换一个答案，或跳过本题。',true);$('feedback').append(createVoteControls(q,{kind:'judgment',answer:value,score:null,reason:result.reason}));return{recognized:false};
  }catch(e){notice(e.name==='TimeoutError'?'AI 等待超时，请重试或跳过。':e.message,true);return{recognized:false}}
  finally{setBusy(false)}
 }
@@ -48,6 +49,7 @@ function finish(match,{source,reason}={}){
  feedback.innerHTML=`<div class="scoreline"><div><div class="category">${match?(score>=75?'深海发现':score>=40?'另辟蹊径':'正确，继续探索'):'这一题，留待下次'}</div><h2 id="answer-name"></h2></div><div class="score">+${score}<small>分</small></div></div><div class="meter"><div style="width:${score}%"></div></div><p id="explanation"></p><p id="score-note"></p><div class="examples"></div><button class="primary" id="next">${index===6?'查看本轮成绩':'继续下潜 →'}</button>`;
  $('answer-name').textContent=match?.name??'已跳过';$('explanation').textContent=reason||'本题的其他参考答案：';
  $('score-note').textContent='100分为本题参考答案中最冷门的档位，不代表真实玩家统计。 '+(source==='live-ai'?'AI 判定及冷门估计可能有误，同一答案判定已在本机缓存。':q.source==='ai'?'本题由 AI 生成并经 AI 复核，尚非人工逐条核验；分数为冷门估计。':'冷门度为题库预设分值。');
+ if(match)$('explanation').after(createVoteControls(q,{kind:'judgment',answer:match.name,score:match.score,reason:reason||'题库参考分值'}));
  renderReferences(feedback.querySelector('.examples'),q);
  $('next').onclick=next;$('next').focus();
 }
@@ -62,7 +64,7 @@ function renderReferences(container,q,all=false){
  container.replaceChildren();
  const perfect=document.createElement('p');perfect.className='perfect-answer';perfect.textContent='100 分参考答案：'+fullScoreAnswers(q).map(a=>a.name).join('、');container.append(perfect);
  const list=document.createElement('div');list.className='reference-list';
- const sorted=[...q.answers].sort((a,b)=>b.score-a.score);for(const a of(all?sorted:sorted.slice(0,4))){const el=document.createElement('span');el.textContent=a.name+' · '+a.score+' 分';list.append(el)}container.append(list);
+ const sorted=[...q.answers].sort((a,b)=>b.score-a.score);for(const a of(all?sorted:sorted.slice(0,4))){const el=document.createElement('div');el.className='reference-item';const text=document.createElement('span');text.textContent=a.name+' · '+a.score+' 分';el.append(text,createVoteControls(q,{kind:'reference',answer:a.name,score:a.score}));list.append(el)}container.append(list);
 }
 function replaceCurrent(){
  if(busy||locked||swapped.length>=2||$('play').hidden)return;
@@ -92,6 +94,7 @@ $('ai-round').onclick=async()=>{
  catch(e){$('ai-status').textContent=e.name==='TimeoutError'?'生成超时，原有游戏已保留。':e.message}
  finally{setBusy(false);if($('again'))$('again').disabled=false}
 };
+$('export-feedback').onclick=()=>{const count=exportFeedback();$('feedback-storage-note').textContent=`已导出 ${count} 条反馈；反馈不会自动修改分数。`};
 $('bank-count').textContent=`${bank.length} 道题 · 优先未玩过`;
 start();
 if(['127.0.0.1','localhost'].includes(location.hostname)){

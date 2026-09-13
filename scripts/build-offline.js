@@ -6,6 +6,8 @@ const bank=fs.readFileSync('dist/bank.js','utf8').replace(/^\s*import[^;]+;\s*/g
 const app=fs.readFileSync('dist/app.js','utf8').replace(/^\s*import[^;]+;\s*/gm,'');
 const scoring=fs.readFileSync('dist/scoring.js','utf8').replace(/export /g,'');
 const eligibility=fs.readFileSync('dist/eligibility.js','utf8').replace(/export /g,'');
-const script='(()=>{\n'+eligibility+'\n'+scoring+'\n'+generated+'\n'+bank+'\n'+app+'\n})();';new vm.Script(script);
+const feedbackData=fs.readFileSync('dist/feedback-data.js','utf8').replace(/export /g,'');
+const feedbackUI=fs.readFileSync('dist/feedback-ui.js','utf8').replace(/^\s*import[^;]+;\s*/gm,'').replace(/export /g,'');
+const script='(()=>{\n'+feedbackData+'\n'+feedbackUI+'\n'+eligibility+'\n'+scoring+'\n'+generated+'\n'+bank+'\n'+app+'\n})();';new vm.Script(script);
 html=html.replace('<link rel="stylesheet" href="style.css">',()=>'<style>'+css+'</style>').replace('<script type="module" src="app.js"></script>',()=>'<script>'+script.replace(/<\/script/gi,'<\\/script')+'</script>').replace('href="./"','href=""');
 fs.writeFileSync('offline/Deepcut.html',html);console.log('Offline game regenerated without keys or network dependencies.');
