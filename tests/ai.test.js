@@ -72,7 +72,7 @@ test('AI round retains novel candidates and generates missing slots in a bounded
  const round=await ai.round([bank[1].title]);assert.equal(round.length,7);assert.equal(calls,2);assert.equal(new Set(round.map(q=>q.title)).size,7);assert.ok(round.every(q=>!q.roundFallback));assert.equal(ai.dynamic.size,7);
 });
 test('repeated AI output never silently substitutes a bank round',async()=>{
- let calls=0;const ai=await engine(async()=>{calls++;return {questions:[bank[0]]}},{minIntervalMs:0});await assert.rejects(ai.round(),/没有替换成题库题/);assert.equal(calls,2);assert.equal(ai.dynamic.size,0);
+ let calls=0;const ai=await engine(async()=>{calls++;return {questions:[bank[0]]}},{minIntervalMs:0});await assert.rejects(ai.round(),/没有替换成题库题/);assert.equal(calls,3);assert.equal(ai.dynamic.size,0);
 });
 test('question title history prevents repeats even when IDs or popularity wording changed',()=>{
  const source=[{id:'new',title:'说出一种交通标志。'},{id:'fresh',title:'说出一种乐器。'}];

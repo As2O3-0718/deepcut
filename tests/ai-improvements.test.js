@@ -22,3 +22,9 @@ test('malformed generation batch can be replaced by a valid second attempt',asyn
  let calls=0;const ai=engine(async()=>++calls===1?{questions:null}:{questions:Array.from({length:7},(_,i)=>({title:'测试集合'+i,category:'分类'+i,hint:'填写一个名称。',answers:Array.from({length:4},(_,j)=>({name:'答案'+j,aliases:[],score:10+j*30}))}))});
  assert.equal((await ai.round()).length,7);assert.equal(calls,2);assert.equal(ai.roundPending,false);
 });
+test('six questions in four categories are retained and a missing category gets a third repair attempt',async()=>{
+ const fixture={hint:'填写一种。',answers:Array.from({length:4},(_,i)=>({name:'例'+i,score:10+i*30,aliases:[]}))};
+ const first=['科学','科学','影视','影视','游戏','文学'].map((category,i)=>({...fixture,category,title:'知识集合'+i}));
+ const requests=[];const ai=engine(async({user})=>{requests.push(user);if(requests.length<3)return {questions:first};return {questions:[{...fixture,title:'补充的新集合',category:user.focus[0]}]}});
+ const round=await ai.round();assert.equal(requests.length,3);assert.equal(requests[1].count,2);assert.equal(requests[1].focus.length,1);assert.ok(!['科学','影视','游戏','文学'].includes(categoryGroup({category:requests[1].focus[0]})));assert.equal(round.length,7);assert.equal(new Set(round.map(categoryGroup)).size,5);assert.equal(round.filter(q=>q.title.startsWith('知识集合')).length,6);
+});
