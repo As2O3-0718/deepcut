@@ -33,7 +33,7 @@ export function createVoteControls(q,{kind='question',answer='',score=null,reaso
  select.onchange=()=>{try{const rows=readFeedback(localStorage);const existing=rows.find(r=>feedbackKey(r)===key);if(existing){const updated={...existing,reason:select.value,updatedAt:Date.now()};localStorage.setItem(FEEDBACK_STORAGE,JSON.stringify(applyFeedback(rows,updated)));outcome.textContent='原因已保存。';if(local){feedbackSync=feedbackSync.then(async()=>{const response=await fetch('/api/feedback',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(updated),signal:AbortSignal.timeout(4000)});if(!response.ok)throw Error()}).catch(()=>{outcome.textContent='原因已存浏览器，服务端未同步。'})}}}catch{outcome.textContent='原因保存失败，请重试。'}};
  review.onclick=async()=>{
   review.disabled=true;outcome.textContent='正在独立复核题意和冷门度…';
-  try{const response=await gameFetch('/api/review',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({questionId:q.id,answer,score,concern:select.value}),signal:AbortSignal.timeout(60000)});const data=await response.json();if(!response.ok)throw Error(data.error||'复核失败');outcome.textContent=data.conclusion+'：'+data.explanation+' 本轮分数未改动。';}
+  try{const response=await gameFetch('/api/review',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({questionId:q.id,answer,score,concern:select.value}),signal:AbortSignal.timeout(60000)});const data=await response.json();if(!response.ok)throw Error(data.error||'复核失败');outcome.textContent=data.conclusion+'：'+data.explanation+(data.cacheCleared?' 已清除相关旧判定，再次提交会重新判断。':'')+' 本轮分数未改动。';}
   catch(e){outcome.textContent=(e.name==='TimeoutError'?'复核超时，请重试。':e.message)}finally{review.disabled=false}
  };
 

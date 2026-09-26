@@ -28,7 +28,7 @@ http.createServer(async(req,res)=>{
       }
       if(path==='/api/judge'){
         if(typeof data.questionId!=='string'||data.questionId.length>100){json(res,400,{error:'缺少有效题目编号。'});return}
-        json(res,200,await ai.judge(data.questionId,data.answer));return;
+        json(res,200,await ai.judge(data.questionId,data.answer,{recheck:data.recheck}));return;
       }
       json(res,404,{error:'接口不存在。'});return;
     }

@@ -33,7 +33,7 @@ function render(){
  $('category').textContent=q.category+(q.source==='ai'?' · AI 题目':'');$('question').textContent=q.title;$('hint').textContent=q.hint;$('question-votes').replaceChildren(createVoteControls(q));
  $('answer').value='';$('skip').hidden=false;$('swap').hidden=false;$('feedback').replaceChildren();$('feedback').className='';setBusy(false);if(index>0)$('answer').focus();
 }
-async function submit(value){
+async function submit(value,{recheck=false}={}){
  if(busy||locked)return{error:'请先完成当前操作。'};
  if(typeof value!=='string'||!value.trim()||value.length>120){notice('请输入120字以内的答案。',true);return{recognized:false}}
  const q=questions[index];const correction=knownInvalidAnswer(q,value);if(correction){notice(correction.reason+' 请更换答案，本次不计分。',true);return{recognized:false}}
@@ -42,11 +42,11 @@ async function submit(value){
  if(!aiAvailable||!$('ai-judge').checked){notice('题库未收录这个答案。可以换个名称或其他答案；本次不扣分。',true);return{recognized:false}}
  setBusy(true);notice('正在请 AI 检查答案和题目条件…');
  try{
-  const result=await api('judge',{questionId:q.id,answer:value});
+  const result=await api('judge',{questionId:q.id,answer:value,recheck});
   if(result.verdict==='valid'){
     finish({name:result.name,score:result.score},{source:'live-ai',reason:result.reason});return{recognized:true,answer:result.name,score:result.score};
   }
-  notice((result.verdict==='uncertain'?'AI 暂时无法确认：':'AI 认为不符合题意：')+result.reason+' 你可以换一个答案，或跳过本题。',true);$('feedback').append(createVoteControls(q,{kind:'judgment',answer:value,score:null,reason:result.reason}));return{recognized:false};
+  notice((result.verdict==='uncertain'?'AI 暂时无法确认：':'AI 认为不符合题意：')+result.reason+' 你可以换一个答案，或跳过本题。',true);$('feedback').append(createVoteControls(q,{kind:'judgment',answer:value,score:null,reason:result.reason}));const retry=document.createElement('button');retry.type='button';retry.className='quiet';retry.textContent='重新判定（1 次 AI 调用）';retry.onclick=()=>submit(value,{recheck:true});$('feedback').append(retry);return{recognized:false};
  }catch(e){notice(e.name==='TimeoutError'?'AI 等待超时，请重试或跳过。':e.message,true);return{recognized:false}}
  finally{setBusy(false)}
 }

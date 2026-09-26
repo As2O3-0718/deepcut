@@ -30,7 +30,7 @@ export class GameService {
     return json({questions:await this.ai.round(data.exclude)});
    }
    if(typeof data.questionId!=='string'||data.questionId.length>100)return json({error:'缺少题目编号。'},400);
-   return json(path==='/api/judge'?await this.ai.judge(data.questionId,data.answer):await this.ai.review(data));
+   return json(path==='/api/judge'?await this.ai.judge(data.questionId,data.answer,{recheck:data.recheck}):await this.ai.review(data));
   }catch(e){return json({error:e.status?e.message:'服务暂时不可用，请重试。'},e.status||503)}
  }
 }
