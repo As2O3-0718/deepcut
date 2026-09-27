@@ -57,7 +57,7 @@ async function submit(value,{recheck=false}={}){
   if(result.verdict==='valid'){
     finish({name:result.name,score:result.score},{source:'live-ai',reason:result.reason});return{recognized:true,answer:result.name,score:result.score};
   }
-  notice((result.verdict==='uncertain'?'AI 暂时无法确认：':'AI 认为不符合题意：')+result.reason+' 你可以换一个答案，或跳过本题。',true);$('feedback').append(createVoteControls(q,{kind:'judgment',answer:value,score:null,reason:result.reason}));const retry=document.createElement('button');retry.type='button';retry.className='quiet';retry.textContent='重新判定（1 次 AI 调用）';retry.onclick=()=>submit(value,{recheck:true});$('feedback').append(retry);return{recognized:false};
+  notice((result.verdict==='uncertain'?'AI 暂时无法确认：':'AI 认为不符合题意：')+result.reason+' 你可以换一个答案，或跳过本题。',true);$('feedback').append(createVoteControls(q,{kind:'judgment',answer:value,score:null,reason:result.reason}));const retry=document.createElement('button');retry.type='button';retry.className='quiet';retry.textContent='重新判定（1 次 AI 调用）';retry.onclick=()=>submit($('answer').value,{recheck:true});$('feedback').append(retry);return{recognized:false};
  }catch(e){notice(e.name==='TimeoutError'?'AI 等待超时，请重试或跳过。':e.message,true);return{recognized:false}}
  finally{setBusy(false)}
 }

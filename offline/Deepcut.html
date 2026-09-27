@@ -98,14 +98,14 @@ function createVoteControls(q,{kind='question',answer='',score=null,reason=''}={
  };
 
  let current=[];try{current=readFeedback(localStorage)}catch{}
- const saved=current.find(r=>feedbackKey(r)===key);if(saved&&[...select.options].some(o=>o.value===saved.reason))select.value=saved.reason;const vote=saved?.vote||0;for(const button of buttons)button.setAttribute('aria-pressed',String(Number(button.dataset.vote)===vote));
- details.hidden=vote!==-1;if(vote===-1)status.textContent=kind==='question'?'已屏蔽，后续开局及换题避开此题。':'已标记争议，可请求复核。';return root;
+ const saved=current.find(r=>feedbackKey(r)===key);if(saved&&[...select.options].some(o=>o.value===saved.reason))select.value=saved.reason;const vote=saved?.vote||0;root.dataset.feedbackVote=String(vote);for(const button of buttons)button.setAttribute('aria-pressed',String(Number(button.dataset.vote)===vote));
+ details.hidden=vote!==-1;if(vote===1)status.textContent='已赞';if(vote===-1)status.textContent=kind==='question'?'已屏蔽，后续开局及换题避开此题。':'已标记争议，可请求复核。';return root;
 }
 function updateVoteButtons(){
  let records=[];try{records=readFeedback(localStorage)}catch{}
  for(const root of document.querySelectorAll('.vote-controls')){
   const vote=records.find(r=>feedbackKey(r)===root.dataset.feedbackKey)?.vote||0;
-  const details=root.querySelector('.feedback-actions');if(details)details.hidden=vote!==-1;const status=root.querySelector('.vote-status');if(status)status.textContent=vote===0?'已撤销':vote===1?'已赞':JSON.parse(root.dataset.feedbackKey)[0]==='question'?'已屏蔽，后续开局及换题避开此题。':'已标记争议，可请求复核。';
+  const details=root.querySelector('.feedback-actions');if(details)details.hidden=vote!==-1;const status=root.querySelector('.vote-status');const previous=Number(root.dataset.feedbackVote)||0;root.dataset.feedbackVote=String(vote);if(status&&vote!==previous)status.textContent=vote===0?'已撤销':vote===1?'已赞':JSON.parse(root.dataset.feedbackKey)[0]==='question'?'已屏蔽，后续开局及换题避开此题。':'已标记争议，可请求复核。';
   for(const button of root.querySelectorAll('.vote-button'))button.setAttribute('aria-pressed',String(Number(button.dataset.vote)===vote));
  }
 }
@@ -15132,7 +15132,7 @@ async function submit(value,{recheck=false}={}){
   if(result.verdict==='valid'){
     finish({name:result.name,score:result.score},{source:'live-ai',reason:result.reason});return{recognized:true,answer:result.name,score:result.score};
   }
-  notice((result.verdict==='uncertain'?'AI 暂时无法确认：':'AI 认为不符合题意：')+result.reason+' 你可以换一个答案，或跳过本题。',true);$('feedback').append(createVoteControls(q,{kind:'judgment',answer:value,score:null,reason:result.reason}));const retry=document.createElement('button');retry.type='button';retry.className='quiet';retry.textContent='重新判定（1 次 AI 调用）';retry.onclick=()=>submit(value,{recheck:true});$('feedback').append(retry);return{recognized:false};
+  notice((result.verdict==='uncertain'?'AI 暂时无法确认：':'AI 认为不符合题意：')+result.reason+' 你可以换一个答案，或跳过本题。',true);$('feedback').append(createVoteControls(q,{kind:'judgment',answer:value,score:null,reason:result.reason}));const retry=document.createElement('button');retry.type='button';retry.className='quiet';retry.textContent='重新判定（1 次 AI 调用）';retry.onclick=()=>submit($('answer').value,{recheck:true});$('feedback').append(retry);return{recognized:false};
  }catch(e){notice(e.name==='TimeoutError'?'AI 等待超时，请重试或跳过。':e.message,true);return{recognized:false}}
  finally{setBusy(false)}
 }

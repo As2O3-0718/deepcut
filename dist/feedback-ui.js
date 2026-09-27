@@ -52,14 +52,14 @@ export function createVoteControls(q,{kind='question',answer='',score=null,reaso
  };
 
  let current=[];try{current=readFeedback(localStorage)}catch{}
- const saved=current.find(r=>feedbackKey(r)===key);if(saved&&[...select.options].some(o=>o.value===saved.reason))select.value=saved.reason;const vote=saved?.vote||0;for(const button of buttons)button.setAttribute('aria-pressed',String(Number(button.dataset.vote)===vote));
- details.hidden=vote!==-1;if(vote===-1)status.textContent=kind==='question'?'已屏蔽，后续开局及换题避开此题。':'已标记争议，可请求复核。';return root;
+ const saved=current.find(r=>feedbackKey(r)===key);if(saved&&[...select.options].some(o=>o.value===saved.reason))select.value=saved.reason;const vote=saved?.vote||0;root.dataset.feedbackVote=String(vote);for(const button of buttons)button.setAttribute('aria-pressed',String(Number(button.dataset.vote)===vote));
+ details.hidden=vote!==-1;if(vote===1)status.textContent='已赞';if(vote===-1)status.textContent=kind==='question'?'已屏蔽，后续开局及换题避开此题。':'已标记争议，可请求复核。';return root;
 }
 function updateVoteButtons(){
  let records=[];try{records=readFeedback(localStorage)}catch{}
  for(const root of document.querySelectorAll('.vote-controls')){
   const vote=records.find(r=>feedbackKey(r)===root.dataset.feedbackKey)?.vote||0;
-  const details=root.querySelector('.feedback-actions');if(details)details.hidden=vote!==-1;const status=root.querySelector('.vote-status');if(status)status.textContent=vote===0?'已撤销':vote===1?'已赞':JSON.parse(root.dataset.feedbackKey)[0]==='question'?'已屏蔽，后续开局及换题避开此题。':'已标记争议，可请求复核。';
+  const details=root.querySelector('.feedback-actions');if(details)details.hidden=vote!==-1;const status=root.querySelector('.vote-status');const previous=Number(root.dataset.feedbackVote)||0;root.dataset.feedbackVote=String(vote);if(status&&vote!==previous)status.textContent=vote===0?'已撤销':vote===1?'已赞':JSON.parse(root.dataset.feedbackKey)[0]==='question'?'已屏蔽，后续开局及换题避开此题。':'已标记争议，可请求复核。';
   for(const button of root.querySelectorAll('.vote-button'))button.setAttribute('aria-pressed',String(Number(button.dataset.vote)===vote));
  }
 }
