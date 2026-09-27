@@ -1,6 +1,18 @@
 import {hasGameAPI,gameFetch} from './api-client.js';
-import {FEEDBACK_STORAGE,feedbackKey,applyFeedback,readFeedback} from './feedback-data.js';
+import {FEEDBACK_STORAGE,REVIEW_STORAGE,feedbackKey,applyFeedback,readFeedback,validateReviewRecord,readReviewHistory,saveReview,latestReview,feedbackExportData} from './feedback-data.js';
 const feedbackEvent='deepcut-feedback-changed';
+const reviewEvent='deepcut-review-history-changed';
+function displayReview(element,record){
+ element.hidden=!record;if(!record)return;
+ element.textContent=`最近复核（${new Date(record.reviewedAt).toLocaleString('zh-CN')}）：${record.conclusion}：${record.explanation} AI 复核意见仅供参考，不自动修改题库或本轮分数。`;
+}
+function updateReviewDisplays(){
+ let records;try{records=readReviewHistory(localStorage)}catch{return}
+ for(const root of document.querySelectorAll('.vote-controls')){
+  const element=root.querySelector('.review-history'),[kind,questionId,question,answer,score]=JSON.parse(root.dataset.feedbackKey);
+  if(element)displayReview(element,latestReview(records,{kind,questionId,question,answer,score}));
+ }
+}
 let feedbackSync=Promise.resolve();
 export function createVoteControls(q,{kind='question',answer='',score=null,reason=''}={}){
  const record={kind,questionId:q.id,question:q.title,answer,score,reason};const key=feedbackKey(record);
@@ -28,12 +40,14 @@ export function createVoteControls(q,{kind='question',answer='',score=null,reaso
  const review=document.createElement('button');review.type='button';review.textContent='AI 复核（1 次调用）';
  const outcome=document.createElement('p');outcome.setAttribute('role','status');
  details.append(select,review,outcome);root.append(details);
+ const history=document.createElement('p');history.className='feedback-actions review-history';history.hidden=true;root.append(history);
+ try{displayReview(history,latestReview(readReviewHistory(localStorage),record))}catch{status.textContent='无法读取复核历史，请允许浏览器本地存储。'}
  const local=['127.0.0.1','localhost'].includes(location.hostname);review.disabled=!hasGameAPI;
  if(!hasGameAPI)outcome.textContent='本机 AI 版可复核；此处可导出反馈。';
  select.onchange=()=>{try{const rows=readFeedback(localStorage);const existing=rows.find(r=>feedbackKey(r)===key);if(existing){const updated={...existing,reason:select.value,updatedAt:Date.now()};localStorage.setItem(FEEDBACK_STORAGE,JSON.stringify(applyFeedback(rows,updated)));outcome.textContent='原因已保存。';if(local){feedbackSync=feedbackSync.then(async()=>{const response=await fetch('/api/feedback',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(updated),signal:AbortSignal.timeout(4000)});if(!response.ok)throw Error()}).catch(()=>{outcome.textContent='原因已存浏览器，服务端未同步。'})}}}catch{outcome.textContent='原因保存失败，请重试。'}};
  review.onclick=async()=>{
-  review.disabled=true;outcome.textContent='正在独立复核题意和冷门度…';
-  try{const response=await gameFetch('/api/review',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({questionId:q.id,answer,score,concern:select.value}),signal:AbortSignal.timeout(60000)});const data=await response.json();if(!response.ok)throw Error(data.error||'复核失败');outcome.textContent=data.conclusion+'：'+data.explanation+(data.cacheCleared?' 已清除相关旧判定，再次提交会重新判断。':'')+' 本轮分数未改动。';}
+  const concern=select.value;review.disabled=true;outcome.textContent='正在独立复核题意和冷门度…';
+  try{const response=await gameFetch('/api/review',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({questionId:q.id,answer,score,concern}),signal:AbortSignal.timeout(60000)});const data=await response.json();if(!response.ok)throw Error(data.error||'复核失败');const result=validateReviewRecord({...record,reason:concern,conclusion:data.conclusion,explanation:data.explanation,cacheCleared:data.cacheCleared,reviewedAt:Date.now()});displayReview(history,result);try{saveReview(localStorage,result);window.dispatchEvent(new Event(reviewEvent));outcome.textContent='复核结果已保存到此浏览器。'+(result.cacheCleared?' 已清除相关旧判定，再次提交会重新判断。':'')}catch{outcome.textContent='复核成功，但历史保存失败；请允许浏览器本地存储。刷新后本次结果可能丢失。'}}
   catch(e){outcome.textContent=(e.name==='TimeoutError'?'复核超时，请重试。':e.message)}finally{review.disabled=false}
  };
 
@@ -49,11 +63,11 @@ function updateVoteButtons(){
   for(const button of root.querySelectorAll('.vote-button'))button.setAttribute('aria-pressed',String(Number(button.dataset.vote)===vote));
  }
 }
-window.addEventListener(feedbackEvent,updateVoteButtons);window.addEventListener('storage',e=>{if(e.key===FEEDBACK_STORAGE)updateVoteButtons()});
+window.addEventListener(feedbackEvent,updateVoteButtons);window.addEventListener(reviewEvent,updateReviewDisplays);window.addEventListener('storage',e=>{if(e.key===FEEDBACK_STORAGE)updateVoteButtons();if(e.key===REVIEW_STORAGE)updateReviewDisplays()});
 export function exportFeedback(){
- let records=[];try{records=readFeedback(localStorage)}catch{}
- const blob=new Blob([JSON.stringify({version:1,exportedAt:new Date().toISOString(),feedback:records},null,2)],{type:'application/json'});
- const url=URL.createObjectURL(blob);const link=document.createElement('a');link.href=url;link.download='deepcut-feedback.json';link.click();setTimeout(()=>URL.revokeObjectURL(url),1000);return records.length;
+ const data=feedbackExportData(localStorage);
+ const blob=new Blob([JSON.stringify(data,null,2)],{type:'application/json'});
+ const url=URL.createObjectURL(blob);const link=document.createElement('a');link.href=url;link.download='deepcut-feedback.json';link.click();setTimeout(()=>URL.revokeObjectURL(url),1000);return data.feedback.length;
 }
 
 export function restoreBlockedQuestions(){const rows=readFeedback(localStorage);const blocked=rows.filter(r=>r.kind==='question'&&r.vote===-1);localStorage.setItem(FEEDBACK_STORAGE,JSON.stringify(rows.filter(r=>!(r.kind==='question'&&r.vote===-1))));window.dispatchEvent(new Event(feedbackEvent));if(['127.0.0.1','localhost'].includes(location.hostname)){for(const r of blocked){feedbackSync=feedbackSync.then(()=>fetch('/api/feedback',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({...r,vote:0,updatedAt:Date.now()}),signal:AbortSignal.timeout(4000)})).catch(()=>{})}}return blocked.length}

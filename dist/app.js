@@ -4,9 +4,19 @@ import {createVoteControls,exportFeedback,restoreBlockedQuestions} from './feedb
 import {knownInvalidAnswer} from './eligibility.js';
 import {fullScoreAnswers} from './scoring.js';
 import {bank,findAnswer,pickRound,chooseReplacement,mergeHistory,avoidRecentSwaps} from './bank.js';
+import {createSessionStore} from './session-state.js';
 const $=id=>document.getElementById(id);
 let questions=[],index=0,records=[],locked=false,busy=false,aiAvailable=false;
 let swapped=[];
+let sessionStore;
+try{sessionStore=createSessionStore(localStorage,{bank})}catch{sessionStore=createSessionStore({getItem(){throw Error('Storage unavailable')}},{bank})}
+const sessionNote=document.createElement('p');sessionNote.className='hint';sessionNote.hidden=true;
+const sessionMessage=document.createElement('span'),sessionRestart=document.createElement('button');sessionRestart.type='button';sessionRestart.className='quiet';sessionRestart.textContent='重新开局';sessionRestart.hidden=true;sessionNote.append(sessionMessage,' ',sessionRestart);$('play').before(sessionNote);
+sessionRestart.onclick=()=>start();
+function saveSession(){
+ if(!questions.length)return;
+ if(!sessionStore.save({questions,index,records,swapped,locked,complete:!$('results').hidden,draft:locked?'':$('answer').value.slice(0,120)})){sessionMessage.textContent='浏览器未能保存当前对局，刷新后可能丢失进度。';sessionNote.hidden=false}
+}
 let seen=[];let seenTitles=[];
 try{const saved=JSON.parse(localStorage.getItem("deepcut-titles-v2")||"[]");if(Array.isArray(saved))seenTitles=saved.filter(x=>typeof x==="string").slice(-2000)}catch{}
 try{const saved=JSON.parse(localStorage.getItem('deepcut-seen-v2')||'[]');if(Array.isArray(saved))seen=saved.filter(x=>typeof x==='string').slice(-2000)}catch{}
@@ -14,7 +24,7 @@ function savedList(key){try{const value=JSON.parse(localStorage.getItem(key)||'[
 function syncHistory(){seen=mergeHistory(seen,savedList('deepcut-seen-v2'));seenTitles=mergeHistory(seenTitles,savedList('deepcut-titles-v2'));}
 function remember(q){syncHistory();seenTitles=seenTitles.filter(x=>x!==q.title);seenTitles.push(q.title);seenTitles=seenTitles.slice(-2000);seen=seen.filter(x=>x!==q.id);seen.push(q.id);seen=seen.slice(-2000);try{localStorage.setItem('deepcut-titles-v2',JSON.stringify(seenTitles));localStorage.setItem('deepcut-seen-v2',JSON.stringify(seen))}catch{$('feedback-storage-note').textContent='浏览器未能保存已玩记录，刷新后可能重复出题。请允许本地存储。'}}
 window.addEventListener('storage',syncHistory);
-function setBusy(value){busy=value;$('answer').disabled=value||locked;$('submit').disabled=value||locked;$('skip').disabled=value;$('swap').disabled=value||locked||swapped.length>=2;$('swap').textContent=`换题（剩 ${2-swapped.length}/2）`; $('ai-round').disabled=value||!aiAvailable||(records.length>0||swapped.length>0)&&!$('play').hidden;$('submit').textContent=value?'AI 正在判断…':'下潜验证 ↓'}
+function setBusy(value){busy=value;sessionRestart.disabled=value;$('answer').disabled=value||locked;$('submit').disabled=value||locked;$('skip').disabled=value;$('swap').disabled=value||locked||swapped.length>=2;$('swap').textContent=`换题（剩 ${2-swapped.length}/2）`; $('ai-round').disabled=value||!aiAvailable||(records.length>0||swapped.length>0)&&!$('play').hidden;$('submit').textContent=value?'AI 正在判断…':'下潜验证 ↓'}
 function notice(text,error=false){$('feedback').className='';const p=document.createElement('p');p.className=error?'error':'hint';p.textContent=text;$('feedback').replaceChildren(p)}
 async function api(path,body){
  const response=await gameFetch('/api/'+path,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body),signal:AbortSignal.timeout(path==='round'?185000:60000)});
@@ -24,14 +34,15 @@ async function api(path,body){
 function availableBank(){try{return eligibleQuestions(bank,readFeedback(localStorage))}catch{return bank}}
 function start(next){
  syncHistory();if(!next){const eligible=availableBank();const filtered=avoidRecentSwaps(eligible,savedList('deepcut-swapped-v1'));const pool=filtered.length>=7?filtered:eligible;if(pool.length<7){notice('可用题目不足七题，请撤销部分题目点踩后再开局。',true);return}next=pickRound(pool,seen,seenTitles)}
- if(busy)return;questions=next;index=0;records=[];swapped=[];locked=false;$('results').hidden=true;$('play').hidden=false;render();
+ if(busy)return;questions=next;index=0;records=[];swapped=[];locked=false;sessionNote.hidden=true;sessionRestart.hidden=true;$('results').hidden=true;$('play').hidden=false;render();
 }
-function render(){
+function render({persist=true}={}){
  locked=false;const q=questions[index];remember(q);
  $('round').textContent=`第 ${String(index+1).padStart(2,'0')} / 07 题`;$('total').textContent=records.reduce((s,r)=>s+r.score,0);
  $('progress').innerHTML=questions.map((_,i)=>`<span class="${i<index?'done':i===index?'current':''}" aria-label="第 ${i+1} 题"></span>`).join('');
  $('category').textContent=q.category+(q.source==='ai'?' · AI 题目':'');$('question').textContent=q.title;$('hint').textContent=q.hint;$('question-votes').replaceChildren(createVoteControls(q));
  $('answer').value='';$('skip').hidden=false;$('swap').hidden=false;$('feedback').replaceChildren();$('feedback').className='';setBusy(false);if(index>0)$('answer').focus();
+ if(persist)saveSession();
 }
 async function submit(value,{recheck=false}={}){
  if(busy||locked)return{error:'请先完成当前操作。'};
@@ -51,7 +62,11 @@ async function submit(value,{recheck=false}={}){
  finally{setBusy(false)}
 }
 function finish(match,{source,reason}={}){
- if(locked)return;locked=true;const q=questions[index];records.push({question:q.title,answer:match?.name??'跳过',score:match?.score??0});$('total').textContent=records.reduce((s,r)=>s+r.score,0);$('skip').hidden=true;$('swap').hidden=true;setBusy(busy);
+ if(locked)return;locked=true;const q=questions[index];const record={question:q.title,answer:match?.name??'跳过',score:match?.score??0,source:match?(source==='live-ai'?'live-ai':'reference'):'skip',reason:reason||''};records.push(record);renderAnswered(record);saveSession();
+}
+function renderAnswered(record){
+ locked=true;const q=questions[index],match=record.source==='skip'?null:{name:record.answer,score:record.score},source=record.source,reason=record.reason;
+ $('answer').value=match?.name??'';$('total').textContent=records.reduce((s,r)=>s+r.score,0);$('skip').hidden=true;$('swap').hidden=true;setBusy(busy);
  const score=match?.score??0,feedback=$('feedback');feedback.className='feedback';
  feedback.innerHTML=`<div class="scoreline"><div><div class="category">${match?(score>=75?'深海发现':score>=40?'另辟蹊径':'正确，继续探索'):'这一题，留待下次'}</div><h2 id="answer-name"></h2></div><div class="score">+${score}<small>分</small></div></div><div class="meter"><div style="width:${score}%"></div></div><p id="explanation"></p><p id="score-note"></p><div class="examples"></div><button class="primary" id="next">${index===6?'查看本轮成绩':'继续下潜 →'}</button>`;
  $('answer-name').textContent=match?.name??'已跳过';$('explanation').textContent=reason||'本题的其他参考答案：';
@@ -65,7 +80,7 @@ function showResults(){
  $('play').hidden=true;$('results').hidden=false;$('round').textContent='本轮下潜完成';$('progress').querySelectorAll('span').forEach(s=>s.className='done');
  const total=records.reduce((s,r)=>s+r.score,0);
  $('results').innerHTML=`<div class="category">DIVE COMPLETE · ${records.filter(r=>r.score>0).length} / 7 题已答对</div><h2>${total>=500?'你找到了深海宝藏。':total>=300?'你有自己的思考航线。':'海很大，继续探索。'}</h2><div class="resultscore">${total}<small> / 700 分</small></div><div id="recap"></div><button class="primary" id="again">题库再潜一轮 ↻</button><p class="hint" style="text-align:center;margin:14px 0 0">优先抽取本机没玩过的题目</p>`;
- records.forEach((r,i)=>{const row=document.createElement('div');row.className='resultrow';const label=document.createElement('span');label.textContent=`${i+1}. ${r.question} ${r.answer}`;const points=document.createElement('b');points.textContent=`${r.score} 分`;row.append(label,points);$('recap').append(row)});renderSwapReview();$('again').onclick=()=>start();setBusy(false);$('again').focus();
+ records.forEach((r,i)=>{const row=document.createElement('div');row.className='resultrow';const label=document.createElement('span');label.textContent=`${i+1}. ${r.question} ${r.answer}`;const points=document.createElement('b');points.textContent=`${r.score} 分`;row.append(label,points);$('recap').append(row)});renderSwapReview();$('again').onclick=()=>start();setBusy(false);$('again').focus();saveSession();
 }
 function renderReferences(container,q,all=false){
  container.replaceChildren();
@@ -92,6 +107,7 @@ $('swap').onclick=replaceCurrent;
 $('continue-replacement').onclick=()=>$('replacement-dialog').close();
 $('replacement-dialog').addEventListener('close',()=>$('answer').focus());
 $('form').onsubmit=e=>{e.preventDefault();void submit($('answer').value)};
+$('answer').addEventListener('input',saveSession);
 $('skip').onclick=()=>{if(!busy)finish(null)};
 $('help').onclick=()=>$('rules').showModal();$('close').onclick=$('gotit').onclick=()=>$('rules').close();
 $('ai-round').onclick=async()=>{
@@ -102,9 +118,18 @@ $('ai-round').onclick=async()=>{
  finally{setBusy(false);if($('again'))$('again').disabled=false}
 };
 const restore=document.createElement('button');restore.className='quiet';restore.textContent='恢复屏蔽题目';$('export-feedback').before(restore);restore.onclick=()=>{try{const count=restoreBlockedQuestions();$('feedback-storage-note').textContent=`已恢复 ${count} 道题的后续抽题资格。`}catch{$('feedback-storage-note').textContent='恢复失败，请允许本地存储后重试。'}};
-$('export-feedback').onclick=()=>{const count=exportFeedback();$('feedback-storage-note').textContent=`已导出 ${count} 条反馈；反馈不会自动修改分数。`};
+$('export-feedback').onclick=()=>{try{const count=exportFeedback();$('feedback-storage-note').textContent=`已导出 ${count} 条赞／踩反馈及本机复核历史。`}catch{$('feedback-storage-note').textContent='导出失败，请允许本地存储后重试。'}};
 $('bank-count').textContent=`${bank.length} 道题 · 优先未玩过`;
-start();
+const savedSession=sessionStore.load();
+if(savedSession.snapshot){
+ const snapshot=savedSession.snapshot;questions=snapshot.questions;index=snapshot.index;records=snapshot.records;swapped=snapshot.swapped;$('results').hidden=true;$('play').hidden=false;render({persist:false});
+ if(snapshot.locked)renderAnswered(records[index]);else $('answer').value=snapshot.draft;
+ if(snapshot.complete)showResults();
+ sessionMessage.textContent=snapshot.complete?'已恢复上次完成的对局成绩。':'已恢复 24 小时内的对局，题目、分数和换题次数已保留。';sessionRestart.hidden=false;sessionNote.hidden=false;
+}else{
+ start();
+ if(savedSession.status==='invalid'){sessionMessage.textContent='旧对局已过期或数据不完整，已为你重新开局。';sessionNote.hidden=false}
+}
 if(hasGameAPI){
  gameFetch('/api/health',{signal:AbortSignal.timeout(3000)}).then(r=>r.ok?r.json():null).then(data=>{
   aiAvailable=!!data?.enabled;$('ai-judge').disabled=!aiAvailable;$('ai-judge').checked=aiAvailable;

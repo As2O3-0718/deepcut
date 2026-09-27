@@ -5,7 +5,7 @@
 .vote-controls{display:flex;align-items:center;flex-wrap:wrap;gap:8px;margin:8px 0;font-size:13px}.vote-label{color:#9ebbc5}.vote-button{border:1px solid #4e7180;background:#0a2633;color:#c5dadf;border-radius:6px;min-width:40px;min-height:36px;padding:5px 10px;font-size:14px}.vote-button:hover{border-color:#a4f7d4}.vote-button[aria-pressed=true]{background:#a4f7d4;color:#092a26;border-color:#a4f7d4}.vote-button[data-vote='-1'][aria-pressed=true]{background:#ffd0a4;color:#38220d;border-color:#ffd0a4}.vote-status{color:#b4d7cf;font-size:12px}.examples .vote-label,.examples .vote-status{border:0;padding:0}.reference-item{padding:10px 12px;border:1px solid #385360;border-radius:8px}.reference-item>span{border:0!important;padding:0!important}.reference-item .vote-controls{margin:8px 0 0}.feedback-storage-note{font-size:13px;line-height:1.8;color:#9eb5bf;margin:18px 0 0}#question-votes{margin:-12px 0 20px}.reference-list{align-items:flex-start}
 
 .feedback-actions{flex-basis:100%;padding:10px 0}.feedback-actions[hidden]{display:none}.feedback-actions select{padding:8px;border-radius:6px;margin-right:8px}.feedback-actions p{line-height:1.6}
-</style></head><body><header><a class="brand" href="">潜<span>DEEPCUT</span></a><div><button id="export-feedback" class="quiet">导出反馈</button><button id="help" class="quiet">玩法说明 ↗</button></div></header><main><div class="eyebrow">THE UNCOMMON ANSWER GAME <span>∞ 免费无限玩</span></div><section class="intro"><h1>别随大流。<br><em>往深处想。</em></h1><p>每轮 7 题，给出一个正确、却少有人想到的答案。<br>越冷门，分数越高。</p></section><div class="ai-toolbar"><div><span id="bank-count"></span><p id="ai-status" role="status">正在检查 AI 连接…</p><label class="ai-toggle"><input type="checkbox" id="ai-judge" disabled> 未收录答案交给 AI 判定</label><small>开启时，会将题目和你提交的未收录答案发送给 DeepSeek。</small></div><button id="ai-round" class="primary" disabled>AI 新一轮 ✦</button></div><section class="game" aria-label="答题区"><div class="gamehead"><span id="round">第 01 / 07 题</span><span>本轮得分 <b id="total">0</b></span></div><div id="progress" class="progress"></div><div id="play"><div class="category" id="category"></div><h2 id="question"></h2><p class="hint" id="hint"></p><div id="question-votes"></div><form id="form"><label class="sr" for="answer">你的答案</label><div class="inputrow"><input id="answer" autocomplete="off" maxlength="120" placeholder="一个不太一样的答案…" required><button class="primary" id="submit">下潜验证 <span>↓</span></button></div></form><div class="under"><span>中文或英文均可 · Enter 提交</span><button id="swap" type="button" class="quiet">换题（剩 2/2）</button><button id="skip" class="quiet">跳过本题 →</button></div><div id="feedback" aria-live="polite"></div></div><div id="results" hidden></div></section><p id="feedback-storage-note" class="feedback-storage-note">点踩题目后，后续抽题避开此题；答案可请求AI 复核。反馈可撤销、导出，不直接修改本轮分数。</p><footer><span>01 — 07 <i>每一次下潜，都有新发现。</i></span><span>独立同类玩法 · 非 Krillion 官方</span></footer></main><dialog id="rules"><button id="close" class="quiet close" aria-label="关闭">✕</button><div class="category">HOW TO PLAY</div><h2>正确，只是开始。</h2><p>一轮随机抽取 7 道不同的题。每题提交一个答案，正确答案可得 10–100 分，七题最高 700 分。每题答完或跳过后展示至少一个100分参考答案，100分代表本题最冷门的参考档位。每轮可在答题前换题两次：原题不计分、不推进题号，并展示原题答案；新题从题库抽取，不重复本轮题目。</p><p>冷门度来自预设或 AI 估计，<strong>不是玩家回答比例</strong>。它是一种娱乐性评分。</p><p>题库优先抽取本机未玩过的题。开启 AI 判定后，未收录答案会发送给 DeepSeek 检查；错误或无法确认时可以重试，跳过得 0 分。AI 生成的题目和评分可能出错，仅供娱乐。支持题库已列出的中文、英文和常用别名。无限次重新开局，无需注册。</p><button id="gotit" class="primary">开始下潜</button></dialog><dialog id="replacement-dialog" aria-labelledby="replaced-title"><div class="category">已换题 · 原题答案</div><h2 id="replaced-title"></h2><p id="swap-description"></p><div id="replaced-answers" class="examples"></div><button class="primary" id="continue-replacement">继续回答新题 →</button></dialog><script>(()=>{
+</style></head><body><header><a class="brand" href="">潜<span>DEEPCUT</span></a><div><button id="export-feedback" class="quiet">导出反馈</button><button id="help" class="quiet">玩法说明 ↗</button></div></header><main><div class="eyebrow">THE UNCOMMON ANSWER GAME <span>∞ 免费无限玩</span></div><section class="intro"><h1>别随大流。<br><em>往深处想。</em></h1><p>每轮 7 题，给出一个正确、却少有人想到的答案。<br>越冷门，分数越高。</p></section><div class="ai-toolbar"><div><span id="bank-count"></span><p id="ai-status" role="status">正在检查 AI 连接…</p><label class="ai-toggle"><input type="checkbox" id="ai-judge" disabled> 未收录答案交给 AI 判定</label><small>开启时，会将题目和你提交的未收录答案发送给 DeepSeek。</small></div><button id="ai-round" class="primary" disabled>AI 新一轮 ✦</button></div><section class="game" aria-label="答题区"><div class="gamehead"><span id="round">第 01 / 07 题</span><span>本轮得分 <b id="total">0</b></span></div><div id="progress" class="progress"></div><div id="play"><div class="category" id="category"></div><h2 id="question"></h2><p class="hint" id="hint"></p><div id="question-votes"></div><form id="form"><label class="sr" for="answer">你的答案</label><div class="inputrow"><input id="answer" autocomplete="off" maxlength="120" placeholder="一个不太一样的答案…" required><button class="primary" id="submit">下潜验证 <span>↓</span></button></div></form><div class="under"><span>中文或英文均可 · Enter 提交</span><button id="swap" type="button" class="quiet">换题（剩 2/2）</button><button id="skip" class="quiet">跳过本题 →</button></div><div id="feedback" aria-live="polite"></div></div><div id="results" hidden></div></section><p id="feedback-storage-note" class="feedback-storage-note">点踩题目后，后续抽题避开此题；答案可请求AI 复核。反馈可撤销、导出，不直接修改本轮分数。</p><footer><span>01 — 07 <i>每一次下潜，都有新发现。</i></span><span>独立同类玩法 · 非 Krillion 官方</span></footer></main><dialog id="rules"><button id="close" class="quiet close" aria-label="关闭">✕</button><div class="category">HOW TO PLAY</div><h2>正确，只是开始。</h2><p>一轮随机抽取 7 道不同的题。当前浏览器会保存24小时内的对局，刷新后可继续；清除浏览器数据会删除进度。每题提交一个答案，正确答案可得 10–100 分，七题最高 700 分。每题答完或跳过后展示至少一个100分参考答案，100分代表本题最冷门的参考档位。每轮可在答题前换题两次：原题不计分、不推进题号，并展示原题答案；新题从题库抽取，不重复本轮题目。</p><p>冷门度来自预设或 AI 估计，<strong>不是玩家回答比例</strong>。它是一种娱乐性评分。</p><p>题库优先抽取本机未玩过的题。开启 AI 判定后，未收录答案会发送给 DeepSeek 检查；错误或无法确认时可以重试，跳过得 0 分。AI 生成的题目和评分可能出错，仅供娱乐。支持题库已列出的中文、英文和常用别名。无限次重新开局，无需注册。</p><button id="gotit" class="primary">开始下潜</button></dialog><dialog id="replacement-dialog" aria-labelledby="replaced-title"><div class="category">已换题 · 原题答案</div><h2 id="replaced-title"></h2><p id="swap-description"></p><div id="replaced-answers" class="examples"></div><button class="primary" id="continue-replacement">继续回答新题 →</button></dialog><script>(()=>{
 const hasGameAPI=false,isLocalAPI=false;function gameFetch(){return Promise.reject(new Error('离线版不提供 AI'))}
 const FEEDBACK_STORAGE='deepcut-feedback-v1';
 function feedbackKey(r){return JSON.stringify([r.kind,r.questionId,r.question,r.answer||'',r.score??null])}
@@ -23,8 +23,42 @@ function applyFeedback(records,value){
 function readFeedback(storage){try{const data=JSON.parse(storage.getItem(FEEDBACK_STORAGE)||'[]');if(!Array.isArray(data))return[];return data.slice(-2000).map(validateFeedback).filter(r=>r.vote!==0)}catch{return[]}}
 
 function eligibleQuestions(pool,feedback){const blocked=new Set(feedback.filter(r=>r.kind==='question'&&r.vote===-1).map(r=>r.question));return pool.filter(q=>!blocked.has(q.title))}
+const REVIEW_STORAGE='deepcut-review-history-v1';
+function validateReviewRecord(value){
+ if(!value||!['建议修订','暂维持','无法确认'].includes(value.conclusion)||typeof value.explanation!=='string'||!value.explanation.trim()||value.explanation.length>600||!Number.isFinite(value.reviewedAt)||value.reviewedAt<0||value.reviewedAt>8640000000000000)throw Error('复核内容不完整，请重试。');
+ const identity=validateFeedback({...value,vote:0,updatedAt:value.reviewedAt});
+ return {kind:identity.kind,questionId:identity.questionId,question:identity.question,answer:identity.answer,score:identity.score,reason:identity.reason,conclusion:value.conclusion,explanation:value.explanation.trim(),reviewedAt:value.reviewedAt,cacheCleared:Number.isInteger(value.cacheCleared)&&value.cacheCleared>0?value.cacheCleared:0};
+}
+function readReviewHistory(storage){
+ const raw=storage.getItem(REVIEW_STORAGE);let rows;
+ try{rows=JSON.parse(raw||'[]')}catch{return []}
+ if(!Array.isArray(rows))return [];
+ return rows.slice(-100).flatMap(row=>{try{return [validateReviewRecord(row)]}catch{return []}});
+}
+function saveReview(storage,value){
+ const record=validateReviewRecord(value),rows=[...readReviewHistory(storage),record].slice(-100);
+ storage.setItem(REVIEW_STORAGE,JSON.stringify(rows));return record;
+}
+function latestReview(records,identity){
+ const key=feedbackKey(identity);return records.filter(row=>feedbackKey(row)===key).reduce((latest,row)=>!latest||row.reviewedAt>=latest.reviewedAt?row:latest,null);
+}
+function feedbackExportData(storage,now=new Date()){
+ return {version:2,exportedAt:now.toISOString(),feedback:readFeedback(storage),reviews:readReviewHistory(storage)};
+}
 
 const feedbackEvent='deepcut-feedback-changed';
+const reviewEvent='deepcut-review-history-changed';
+function displayReview(element,record){
+ element.hidden=!record;if(!record)return;
+ element.textContent=`最近复核（${new Date(record.reviewedAt).toLocaleString('zh-CN')}）：${record.conclusion}：${record.explanation} AI 复核意见仅供参考，不自动修改题库或本轮分数。`;
+}
+function updateReviewDisplays(){
+ let records;try{records=readReviewHistory(localStorage)}catch{return}
+ for(const root of document.querySelectorAll('.vote-controls')){
+  const element=root.querySelector('.review-history'),[kind,questionId,question,answer,score]=JSON.parse(root.dataset.feedbackKey);
+  if(element)displayReview(element,latestReview(records,{kind,questionId,question,answer,score}));
+ }
+}
 let feedbackSync=Promise.resolve();
 function createVoteControls(q,{kind='question',answer='',score=null,reason=''}={}){
  const record={kind,questionId:q.id,question:q.title,answer,score,reason};const key=feedbackKey(record);
@@ -52,12 +86,14 @@ function createVoteControls(q,{kind='question',answer='',score=null,reason=''}={
  const review=document.createElement('button');review.type='button';review.textContent='AI 复核（1 次调用）';
  const outcome=document.createElement('p');outcome.setAttribute('role','status');
  details.append(select,review,outcome);root.append(details);
+ const history=document.createElement('p');history.className='feedback-actions review-history';history.hidden=true;root.append(history);
+ try{displayReview(history,latestReview(readReviewHistory(localStorage),record))}catch{status.textContent='无法读取复核历史，请允许浏览器本地存储。'}
  const local=['127.0.0.1','localhost'].includes(location.hostname);review.disabled=!hasGameAPI;
  if(!hasGameAPI)outcome.textContent='本机 AI 版可复核；此处可导出反馈。';
  select.onchange=()=>{try{const rows=readFeedback(localStorage);const existing=rows.find(r=>feedbackKey(r)===key);if(existing){const updated={...existing,reason:select.value,updatedAt:Date.now()};localStorage.setItem(FEEDBACK_STORAGE,JSON.stringify(applyFeedback(rows,updated)));outcome.textContent='原因已保存。';if(local){feedbackSync=feedbackSync.then(async()=>{const response=await fetch('/api/feedback',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(updated),signal:AbortSignal.timeout(4000)});if(!response.ok)throw Error()}).catch(()=>{outcome.textContent='原因已存浏览器，服务端未同步。'})}}}catch{outcome.textContent='原因保存失败，请重试。'}};
  review.onclick=async()=>{
-  review.disabled=true;outcome.textContent='正在独立复核题意和冷门度…';
-  try{const response=await gameFetch('/api/review',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({questionId:q.id,answer,score,concern:select.value}),signal:AbortSignal.timeout(60000)});const data=await response.json();if(!response.ok)throw Error(data.error||'复核失败');outcome.textContent=data.conclusion+'：'+data.explanation+(data.cacheCleared?' 已清除相关旧判定，再次提交会重新判断。':'')+' 本轮分数未改动。';}
+  const concern=select.value;review.disabled=true;outcome.textContent='正在独立复核题意和冷门度…';
+  try{const response=await gameFetch('/api/review',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({questionId:q.id,answer,score,concern}),signal:AbortSignal.timeout(60000)});const data=await response.json();if(!response.ok)throw Error(data.error||'复核失败');const result=validateReviewRecord({...record,reason:concern,conclusion:data.conclusion,explanation:data.explanation,cacheCleared:data.cacheCleared,reviewedAt:Date.now()});displayReview(history,result);try{saveReview(localStorage,result);window.dispatchEvent(new Event(reviewEvent));outcome.textContent='复核结果已保存到此浏览器。'+(result.cacheCleared?' 已清除相关旧判定，再次提交会重新判断。':'')}catch{outcome.textContent='复核成功，但历史保存失败；请允许浏览器本地存储。刷新后本次结果可能丢失。'}}
   catch(e){outcome.textContent=(e.name==='TimeoutError'?'复核超时，请重试。':e.message)}finally{review.disabled=false}
  };
 
@@ -73,11 +109,11 @@ function updateVoteButtons(){
   for(const button of root.querySelectorAll('.vote-button'))button.setAttribute('aria-pressed',String(Number(button.dataset.vote)===vote));
  }
 }
-window.addEventListener(feedbackEvent,updateVoteButtons);window.addEventListener('storage',e=>{if(e.key===FEEDBACK_STORAGE)updateVoteButtons()});
+window.addEventListener(feedbackEvent,updateVoteButtons);window.addEventListener(reviewEvent,updateReviewDisplays);window.addEventListener('storage',e=>{if(e.key===FEEDBACK_STORAGE)updateVoteButtons();if(e.key===REVIEW_STORAGE)updateReviewDisplays()});
 function exportFeedback(){
- let records=[];try{records=readFeedback(localStorage)}catch{}
- const blob=new Blob([JSON.stringify({version:1,exportedAt:new Date().toISOString(),feedback:records},null,2)],{type:'application/json'});
- const url=URL.createObjectURL(blob);const link=document.createElement('a');link.href=url;link.download='deepcut-feedback.json';link.click();setTimeout(()=>URL.revokeObjectURL(url),1000);return records.length;
+ const data=feedbackExportData(localStorage);
+ const blob=new Blob([JSON.stringify(data,null,2)],{type:'application/json'});
+ const url=URL.createObjectURL(blob);const link=document.createElement('a');link.href=url;link.download='deepcut-feedback.json';link.click();setTimeout(()=>URL.revokeObjectURL(url),1000);return data.feedback.length;
 }
 
 function restoreBlockedQuestions(){const rows=readFeedback(localStorage);const blocked=rows.filter(r=>r.kind==='question'&&r.vote===-1);localStorage.setItem(FEEDBACK_STORAGE,JSON.stringify(rows.filter(r=>!(r.kind==='question'&&r.vote===-1))));window.dispatchEvent(new Event(feedbackEvent));if(['127.0.0.1','localhost'].includes(location.hostname)){for(const r of blocked){feedbackSync=feedbackSync.then(()=>fetch('/api/feedback',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({...r,vote:0,updatedAt:Date.now()}),signal:AbortSignal.timeout(4000)})).catch(()=>{})}}return blocked.length}
@@ -14995,9 +15031,67 @@ function chooseReplacement(source,active,replaced,seen=[],seenTitles=[]){
 function mergeHistory(saved,current,limit=2000){return [...new Set([...saved,...current])].slice(-limit)}
 function avoidRecentSwaps(source,swappedTitles){const keys=new Set(swappedTitles.map(questionHistoryKey));return source.filter(q=>!keys.has(questionHistoryKey(q.title)))}
 
+const SESSION_STORAGE='deepcut-session-v1';
+const SESSION_MAX_AGE=24*60*60*1000;
+const SESSION_VERSION=1;
+const sessionText=(value,max,empty=false)=>typeof value==='string'&&value.length<=max&&(empty||value.trim().length>0)&&!/[<>\u0000-\u001f]/.test(value);
+function sessionQuestion(value){
+ if(!value||!sessionText(value.id,100)||!sessionText(value.title,200)||!sessionText(value.category,80)||!sessionText(value.hint,500,true)||!['ai','curated'].includes(value.source)||value.scoreVersion!==SCORING_VERSION||!Array.isArray(value.answers)||value.answers.length<2||value.answers.length>100)throw Error('Invalid saved question');
+ const answers=value.answers.map(a=>{
+  if(!a||!sessionText(a.name,120)||!Number.isInteger(a.score)||a.score<10||a.score>100||!Array.isArray(a.aliases)||a.aliases.length>20||a.aliases.some(x=>!sessionText(x,120)))throw Error('Invalid saved answer');
+  return{name:a.name,score:a.score,aliases:[...a.aliases]};
+ });
+ if(!answers.some(a=>a.score===100)||new Set(answers.map(a=>a.name)).size!==answers.length)throw Error('Invalid saved references');
+ return{id:value.id,title:value.title,category:value.category,hint:value.hint,source:value.source,scoreVersion:value.scoreVersion,answers};
+}
+
+// Only this bounded, versioned shape is restored. Scores are derived from records,
+// never from a saved total, and reference points must still match the question.
+function validateSession(value,{now=Date.now(),bank=[]}={}){
+ if(!value||value.version!==SESSION_VERSION||value.scoringVersion!==SCORING_VERSION||!Number.isSafeInteger(value.savedAt)||value.savedAt<0||value.savedAt>now+60000||now-value.savedAt>SESSION_MAX_AGE||value.busy!==undefined||!Array.isArray(value.questions)||value.questions.length!==7||!Number.isInteger(value.index)||value.index<0||value.index>6||typeof value.locked!=='boolean'||typeof value.complete!=='boolean'||!Array.isArray(value.records)||!Array.isArray(value.swapped)||value.swapped.length>2||typeof value.draft!=='string'||value.draft.length>120)throw Error('Invalid saved session');
+ const questions=value.questions.map(sessionQuestion),swapped=value.swapped.map(sessionQuestion);
+ const all=[...questions,...swapped];
+ if(new Set(all.map(q=>q.id)).size!==all.length||new Set(all.map(q=>q.title)).size!==all.length)throw Error('Duplicate saved questions');
+ for(const q of all){const original=bank.find(item=>item.id===q.id);if(original&&JSON.stringify(sessionQuestion(original))!==JSON.stringify(q)||!original&&q.source!=='ai')throw Error('Saved question changed');}
+ if(value.records.length!==value.index+(value.locked?1:0)||value.complete&&(!value.locked||value.index!==6)||value.locked&&value.draft!=='')throw Error('Invalid saved progress');
+ const records=value.records.map((r,i)=>{
+  if(!r||r.question!==questions[i].title||!sessionText(r.answer,120)||!Number.isInteger(r.score)||r.score<0||r.score>100||!['reference','live-ai','skip'].includes(r.source)||!sessionText(r.reason,600,true))throw Error('Invalid saved result');
+  if(r.source==='skip'?(r.score!==0||r.answer!=='跳过'):r.score<10)throw Error('Invalid saved points');
+  if(r.source==='reference'&&!questions[i].answers.some(a=>a.name===r.answer&&a.score===r.score))throw Error('Changed reference points');
+  if(r.source==='live-ai'&&!r.reason.trim())throw Error('Missing AI explanation');
+  return{question:r.question,answer:r.answer,score:r.score,source:r.source,reason:r.reason};
+ });
+ return{version:SESSION_VERSION,scoringVersion:SCORING_VERSION,savedAt:value.savedAt,questions,index:value.index,records,swapped,locked:value.locked,complete:value.complete,draft:value.draft};
+}
+
+function createSessionStore(storage,{bank=[],now=()=>Date.now()}={}){
+ let disabled=false;
+ return{
+  load(){
+   let raw;try{raw=storage.getItem(SESSION_STORAGE)}catch{disabled=true;return{status:'unavailable',snapshot:null}}
+   if(raw===null)return{status:'empty',snapshot:null};
+   try{if(raw.length>250000)throw Error('Oversized session');return{status:'restored',snapshot:validateSession(JSON.parse(raw),{now:now(),bank})}}catch{return{status:'invalid',snapshot:null}}
+  },
+  save(state){
+   if(disabled)return false;
+   let raw;try{const snapshot=validateSession({...state,version:SESSION_VERSION,scoringVersion:SCORING_VERSION,savedAt:now()},{now:now(),bank});raw=JSON.stringify(snapshot);if(raw.length>250000)throw Error('Oversized session')}catch{return false}
+   try{storage.setItem(SESSION_STORAGE,raw);return true}catch{disabled=true;return false}
+  }
+ };
+}
+
 const $=id=>document.getElementById(id);
 let questions=[],index=0,records=[],locked=false,busy=false,aiAvailable=false;
 let swapped=[];
+let sessionStore;
+try{sessionStore=createSessionStore(localStorage,{bank})}catch{sessionStore=createSessionStore({getItem(){throw Error('Storage unavailable')}},{bank})}
+const sessionNote=document.createElement('p');sessionNote.className='hint';sessionNote.hidden=true;
+const sessionMessage=document.createElement('span'),sessionRestart=document.createElement('button');sessionRestart.type='button';sessionRestart.className='quiet';sessionRestart.textContent='重新开局';sessionRestart.hidden=true;sessionNote.append(sessionMessage,' ',sessionRestart);$('play').before(sessionNote);
+sessionRestart.onclick=()=>start();
+function saveSession(){
+ if(!questions.length)return;
+ if(!sessionStore.save({questions,index,records,swapped,locked,complete:!$('results').hidden,draft:locked?'':$('answer').value.slice(0,120)})){sessionMessage.textContent='浏览器未能保存当前对局，刷新后可能丢失进度。';sessionNote.hidden=false}
+}
 let seen=[];let seenTitles=[];
 try{const saved=JSON.parse(localStorage.getItem("deepcut-titles-v2")||"[]");if(Array.isArray(saved))seenTitles=saved.filter(x=>typeof x==="string").slice(-2000)}catch{}
 try{const saved=JSON.parse(localStorage.getItem('deepcut-seen-v2')||'[]');if(Array.isArray(saved))seen=saved.filter(x=>typeof x==='string').slice(-2000)}catch{}
@@ -15005,7 +15099,7 @@ function savedList(key){try{const value=JSON.parse(localStorage.getItem(key)||'[
 function syncHistory(){seen=mergeHistory(seen,savedList('deepcut-seen-v2'));seenTitles=mergeHistory(seenTitles,savedList('deepcut-titles-v2'));}
 function remember(q){syncHistory();seenTitles=seenTitles.filter(x=>x!==q.title);seenTitles.push(q.title);seenTitles=seenTitles.slice(-2000);seen=seen.filter(x=>x!==q.id);seen.push(q.id);seen=seen.slice(-2000);try{localStorage.setItem('deepcut-titles-v2',JSON.stringify(seenTitles));localStorage.setItem('deepcut-seen-v2',JSON.stringify(seen))}catch{$('feedback-storage-note').textContent='浏览器未能保存已玩记录，刷新后可能重复出题。请允许本地存储。'}}
 window.addEventListener('storage',syncHistory);
-function setBusy(value){busy=value;$('answer').disabled=value||locked;$('submit').disabled=value||locked;$('skip').disabled=value;$('swap').disabled=value||locked||swapped.length>=2;$('swap').textContent=`换题（剩 ${2-swapped.length}/2）`; $('ai-round').disabled=value||!aiAvailable||(records.length>0||swapped.length>0)&&!$('play').hidden;$('submit').textContent=value?'AI 正在判断…':'下潜验证 ↓'}
+function setBusy(value){busy=value;sessionRestart.disabled=value;$('answer').disabled=value||locked;$('submit').disabled=value||locked;$('skip').disabled=value;$('swap').disabled=value||locked||swapped.length>=2;$('swap').textContent=`换题（剩 ${2-swapped.length}/2）`; $('ai-round').disabled=value||!aiAvailable||(records.length>0||swapped.length>0)&&!$('play').hidden;$('submit').textContent=value?'AI 正在判断…':'下潜验证 ↓'}
 function notice(text,error=false){$('feedback').className='';const p=document.createElement('p');p.className=error?'error':'hint';p.textContent=text;$('feedback').replaceChildren(p)}
 async function api(path,body){
  const response=await gameFetch('/api/'+path,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body),signal:AbortSignal.timeout(path==='round'?185000:60000)});
@@ -15015,14 +15109,15 @@ async function api(path,body){
 function availableBank(){try{return eligibleQuestions(bank,readFeedback(localStorage))}catch{return bank}}
 function start(next){
  syncHistory();if(!next){const eligible=availableBank();const filtered=avoidRecentSwaps(eligible,savedList('deepcut-swapped-v1'));const pool=filtered.length>=7?filtered:eligible;if(pool.length<7){notice('可用题目不足七题，请撤销部分题目点踩后再开局。',true);return}next=pickRound(pool,seen,seenTitles)}
- if(busy)return;questions=next;index=0;records=[];swapped=[];locked=false;$('results').hidden=true;$('play').hidden=false;render();
+ if(busy)return;questions=next;index=0;records=[];swapped=[];locked=false;sessionNote.hidden=true;sessionRestart.hidden=true;$('results').hidden=true;$('play').hidden=false;render();
 }
-function render(){
+function render({persist=true}={}){
  locked=false;const q=questions[index];remember(q);
  $('round').textContent=`第 ${String(index+1).padStart(2,'0')} / 07 题`;$('total').textContent=records.reduce((s,r)=>s+r.score,0);
  $('progress').innerHTML=questions.map((_,i)=>`<span class="${i<index?'done':i===index?'current':''}" aria-label="第 ${i+1} 题"></span>`).join('');
  $('category').textContent=q.category+(q.source==='ai'?' · AI 题目':'');$('question').textContent=q.title;$('hint').textContent=q.hint;$('question-votes').replaceChildren(createVoteControls(q));
  $('answer').value='';$('skip').hidden=false;$('swap').hidden=false;$('feedback').replaceChildren();$('feedback').className='';setBusy(false);if(index>0)$('answer').focus();
+ if(persist)saveSession();
 }
 async function submit(value,{recheck=false}={}){
  if(busy||locked)return{error:'请先完成当前操作。'};
@@ -15042,7 +15137,11 @@ async function submit(value,{recheck=false}={}){
  finally{setBusy(false)}
 }
 function finish(match,{source,reason}={}){
- if(locked)return;locked=true;const q=questions[index];records.push({question:q.title,answer:match?.name??'跳过',score:match?.score??0});$('total').textContent=records.reduce((s,r)=>s+r.score,0);$('skip').hidden=true;$('swap').hidden=true;setBusy(busy);
+ if(locked)return;locked=true;const q=questions[index];const record={question:q.title,answer:match?.name??'跳过',score:match?.score??0,source:match?(source==='live-ai'?'live-ai':'reference'):'skip',reason:reason||''};records.push(record);renderAnswered(record);saveSession();
+}
+function renderAnswered(record){
+ locked=true;const q=questions[index],match=record.source==='skip'?null:{name:record.answer,score:record.score},source=record.source,reason=record.reason;
+ $('answer').value=match?.name??'';$('total').textContent=records.reduce((s,r)=>s+r.score,0);$('skip').hidden=true;$('swap').hidden=true;setBusy(busy);
  const score=match?.score??0,feedback=$('feedback');feedback.className='feedback';
  feedback.innerHTML=`<div class="scoreline"><div><div class="category">${match?(score>=75?'深海发现':score>=40?'另辟蹊径':'正确，继续探索'):'这一题，留待下次'}</div><h2 id="answer-name"></h2></div><div class="score">+${score}<small>分</small></div></div><div class="meter"><div style="width:${score}%"></div></div><p id="explanation"></p><p id="score-note"></p><div class="examples"></div><button class="primary" id="next">${index===6?'查看本轮成绩':'继续下潜 →'}</button>`;
  $('answer-name').textContent=match?.name??'已跳过';$('explanation').textContent=reason||'本题的其他参考答案：';
@@ -15056,7 +15155,7 @@ function showResults(){
  $('play').hidden=true;$('results').hidden=false;$('round').textContent='本轮下潜完成';$('progress').querySelectorAll('span').forEach(s=>s.className='done');
  const total=records.reduce((s,r)=>s+r.score,0);
  $('results').innerHTML=`<div class="category">DIVE COMPLETE · ${records.filter(r=>r.score>0).length} / 7 题已答对</div><h2>${total>=500?'你找到了深海宝藏。':total>=300?'你有自己的思考航线。':'海很大，继续探索。'}</h2><div class="resultscore">${total}<small> / 700 分</small></div><div id="recap"></div><button class="primary" id="again">题库再潜一轮 ↻</button><p class="hint" style="text-align:center;margin:14px 0 0">优先抽取本机没玩过的题目</p>`;
- records.forEach((r,i)=>{const row=document.createElement('div');row.className='resultrow';const label=document.createElement('span');label.textContent=`${i+1}. ${r.question} ${r.answer}`;const points=document.createElement('b');points.textContent=`${r.score} 分`;row.append(label,points);$('recap').append(row)});renderSwapReview();$('again').onclick=()=>start();setBusy(false);$('again').focus();
+ records.forEach((r,i)=>{const row=document.createElement('div');row.className='resultrow';const label=document.createElement('span');label.textContent=`${i+1}. ${r.question} ${r.answer}`;const points=document.createElement('b');points.textContent=`${r.score} 分`;row.append(label,points);$('recap').append(row)});renderSwapReview();$('again').onclick=()=>start();setBusy(false);$('again').focus();saveSession();
 }
 function renderReferences(container,q,all=false){
  container.replaceChildren();
@@ -15083,6 +15182,7 @@ $('swap').onclick=replaceCurrent;
 $('continue-replacement').onclick=()=>$('replacement-dialog').close();
 $('replacement-dialog').addEventListener('close',()=>$('answer').focus());
 $('form').onsubmit=e=>{e.preventDefault();void submit($('answer').value)};
+$('answer').addEventListener('input',saveSession);
 $('skip').onclick=()=>{if(!busy)finish(null)};
 $('help').onclick=()=>$('rules').showModal();$('close').onclick=$('gotit').onclick=()=>$('rules').close();
 $('ai-round').onclick=async()=>{
@@ -15093,9 +15193,18 @@ $('ai-round').onclick=async()=>{
  finally{setBusy(false);if($('again'))$('again').disabled=false}
 };
 const restore=document.createElement('button');restore.className='quiet';restore.textContent='恢复屏蔽题目';$('export-feedback').before(restore);restore.onclick=()=>{try{const count=restoreBlockedQuestions();$('feedback-storage-note').textContent=`已恢复 ${count} 道题的后续抽题资格。`}catch{$('feedback-storage-note').textContent='恢复失败，请允许本地存储后重试。'}};
-$('export-feedback').onclick=()=>{const count=exportFeedback();$('feedback-storage-note').textContent=`已导出 ${count} 条反馈；反馈不会自动修改分数。`};
+$('export-feedback').onclick=()=>{try{const count=exportFeedback();$('feedback-storage-note').textContent=`已导出 ${count} 条赞／踩反馈及本机复核历史。`}catch{$('feedback-storage-note').textContent='导出失败，请允许本地存储后重试。'}};
 $('bank-count').textContent=`${bank.length} 道题 · 优先未玩过`;
-start();
+const savedSession=sessionStore.load();
+if(savedSession.snapshot){
+ const snapshot=savedSession.snapshot;questions=snapshot.questions;index=snapshot.index;records=snapshot.records;swapped=snapshot.swapped;$('results').hidden=true;$('play').hidden=false;render({persist:false});
+ if(snapshot.locked)renderAnswered(records[index]);else $('answer').value=snapshot.draft;
+ if(snapshot.complete)showResults();
+ sessionMessage.textContent=snapshot.complete?'已恢复上次完成的对局成绩。':'已恢复 24 小时内的对局，题目、分数和换题次数已保留。';sessionRestart.hidden=false;sessionNote.hidden=false;
+}else{
+ start();
+ if(savedSession.status==='invalid'){sessionMessage.textContent='旧对局已过期或数据不完整，已为你重新开局。';sessionNote.hidden=false}
+}
 if(hasGameAPI){
  gameFetch('/api/health',{signal:AbortSignal.timeout(3000)}).then(r=>r.ok?r.json():null).then(data=>{
   aiAvailable=!!data?.enabled;$('ai-judge').disabled=!aiAvailable;$('ai-judge').checked=aiAvailable;

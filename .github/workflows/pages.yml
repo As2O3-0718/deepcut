@@ -26,6 +26,8 @@ jobs:
       - name: Validate game
         run: |
           npm test
+          npm run offline
+          git diff --exit-code -- offline/Deepcut.html
           node --check dist/app.js
           node --check dist/bank.js
       - uses: actions/configure-pages@v5
