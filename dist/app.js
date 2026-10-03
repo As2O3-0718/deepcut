@@ -33,12 +33,12 @@ function notice(text,error=false){$('feedback').className='';const p=document.cr
 async function api(path,body){
  const response=await gameFetch('/api/'+path,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body),signal:AbortSignal.timeout(path==='round'?185000:60000)});
  let data;try{data=await response.json()}catch{throw new Error('AI 服务暂时不可用，请重试或跳过。')}
- if(!response.ok)throw new Error(data.error||'AI 暂时不可用，请重试或跳过。');return data;
+ if(!response.ok){const error=new Error(data.error||'AI 暂时不可用，请重试或跳过。');if(data.code==='ROUND_INCOMPLETE')error.code=data.code;throw error}return data;
 }
 function availableBank(){try{return eligibleQuestions(bank,readFeedback(localStorage))}catch{return bank}}
 function start(next,{theme=activeTheme,mode='bank'}={}){
  if(busy)return;syncHistory();if(!next){const eligible=themeQuestions(availableBank(),theme);const filtered=avoidRecentSwaps(eligible,savedList('deepcut-swapped-v1'));const pool=filtered.length>=7?filtered:eligible;if(pool.length<7){$('theme-note').textContent='此主题可用题目不足七题，请换一个主题或恢复已屏蔽题目。原对局已保留。';return}next=pickRound(pool,seen,seenTitles)}
- activeTheme=themeFor(theme).id;diveMode=mode;diveId=newDiveId();questions=next;index=0;records=[];swapped=[];locked=false;sessionNote.hidden=true;sessionRestart.hidden=true;$('results').hidden=true;$('play').hidden=false;$('theme-select').value=activeTheme;$('theme-note').textContent=diveMode==='ai'?'已开启 AI 综合探索。':`已开启「${themeFor(activeTheme).name}」· ${themeFor(activeTheme).subtitle}`;render();
+ activeTheme=themeFor(theme).id;diveMode=mode;diveId=newDiveId();questions=next;index=0;records=[];swapped=[];locked=false;sessionNote.hidden=true;sessionRestart.hidden=true;$('results').hidden=true;$('play').hidden=false;$('ai-round').textContent='AI 新一轮 ✦';$('theme-select').value=activeTheme;$('theme-note').textContent=diveMode==='ai'?'已开启 AI 综合探索。':`已开启「${themeFor(activeTheme).name}」· ${themeFor(activeTheme).subtitle}`;render();
 }
 function renderProgress(){
  $('progress').innerHTML=questions.map((_,i)=>{const score=records[i]?.score,band=score===undefined?null:scoreBand(score);return `<span class="${band?band.className:i===index?'current':''}" aria-label="第 ${i+1} 题${band?'，'+score+' 分':i===index?'，当前题':'，未作答'}" title="第 ${i+1} 题${band?' · '+score+' 分':''}"></span>`}).join('');
@@ -125,10 +125,10 @@ $('answer').addEventListener('input',saveSession);
 $('skip').onclick=()=>{if(!busy)finish(null)};
 $('help').onclick=()=>$('rules').showModal();$('close').onclick=$('gotit').onclick=()=>$('rules').close();
 $('ai-round').onclick=async()=>{
- if(busy)return;syncHistory();setBusy(true);$('ai-status').textContent='正在生成 7 道新题；自动补齐缺少类别，最多 3 次调用、约三分钟…';
+ if(busy)return;syncHistory();setBusy(true);$('ai-status').textContent='正在生成并补齐 7 道新题，过滤重复题与不合格答案；最多约三分钟…';
  if($('again'))$('again').disabled=true;
- try{const blocked=readFeedback(localStorage).filter(r=>r.kind==='question'&&r.vote===-1).map(r=>r.question);const exclude=[...new Set([...seenTitles,...savedList('deepcut-swapped-v1'),...bank.filter(q=>seen.includes(q.id)).map(q=>q.title),...questions.map(q=>q.title),...blocked])].slice(-2000);const data=await api('round',{exclude});setBusy(false);const accepted=eligibleQuestions(data.questions,readFeedback(localStorage));if(accepted.length!==7)throw Error('AI 生成了已屏蔽的题目，请重试。');start(accepted,{theme:'all',mode:'ai'});const fallback=accepted.filter(q=>q.roundFallback).length;$('ai-status').textContent=fallback?`本轮已就绪 · AI 新题 ${7-fallback} 道，题库补充 ${fallback} 道（已过滤重复题）`:'AI 新题已就绪 · 评分为估计值'}
- catch(e){$('ai-status').textContent=e.name==='TimeoutError'?'生成超时，原有游戏已保留。':e.message}
+ try{const blocked=readFeedback(localStorage).filter(r=>r.kind==='question'&&r.vote===-1).map(r=>r.question);const exclude=[...new Set([...seenTitles,...savedList('deepcut-swapped-v1'),...bank.filter(q=>seen.includes(q.id)).map(q=>q.title),...questions.map(q=>q.title),...blocked])].slice(-2000);const data=await api('round',{exclude});setBusy(false);const accepted=eligibleQuestions(data.questions,readFeedback(localStorage));if(accepted.length!==7)throw Error('AI 生成了已屏蔽的题目，请重试。');start(accepted,{theme:'all',mode:'ai'});const fallback=accepted.filter(q=>q.roundFallback).length;$('ai-status').textContent=fallback?`本轮已就绪 · AI 新题 ${7-fallback} 道，题库补充 ${fallback} 道（已过滤重复题）`:Number.isInteger(data.generation?.categories)?`AI 新题已就绪 · 7 道、${data.generation.categories} 类 · 评分为估计值`:'AI 新题已就绪 · 评分为估计值'}
+ catch(e){$('ai-status').textContent=e.name==='TimeoutError'?'生成超时，原有游戏已保留。':e.message;if(e.code==='ROUND_INCOMPLETE')$('ai-round').textContent='继续补齐 AI 题目 ✦'}
  finally{setBusy(false);if($('again'))$('again').disabled=false}
 };
 const restore=document.createElement('button');restore.className='quiet';restore.textContent='恢复屏蔽题目';$('export-feedback').before(restore);restore.onclick=()=>{try{const count=restoreBlockedQuestions();$('feedback-storage-note').textContent=`已恢复 ${count} 道题的后续抽题资格。`}catch{$('feedback-storage-note').textContent='恢复失败，请允许本地存储后重试。'}};

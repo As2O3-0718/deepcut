@@ -15,7 +15,7 @@ http.createServer(async(req,res)=>{
   try{
     if(path.startsWith('/api/')){
       if(req.headers.origin&&!['http://127.0.0.1:4173','http://localhost:4173'].includes(req.headers.origin)){json(res,403,{error:'不允许跨站调用。'});return}
-      if(path==='/api/health'&&req.method==='GET'){json(res,200,{enabled:!!ai.key,minIntervalSeconds:ai.minIntervalMs/1000});return}
+      if(path==='/api/health'&&req.method==='GET'){json(res,200,{enabled:!!ai.key,minIntervalSeconds:ai.minIntervalMs/1000,generationVersion:ai.generationVersion});return}
       if(req.method!=='POST'||!req.headers['content-type']?.startsWith('application/json')){json(res,405,{error:'需要JSON POST请求。'});return}
       const data=await body(req);
       if(!data||typeof data!=='object'||Array.isArray(data)){json(res,400,{error:'请求必须是JSON对象。'});return}
@@ -24,7 +24,7 @@ http.createServer(async(req,res)=>{
       if(path==='/api/review'){json(res,200,await ai.review(data));return}
       if(path==='/api/round'){
         if(data.exclude!==undefined&&(!Array.isArray(data.exclude)||data.exclude.length>2000||data.exclude.some(s=>typeof s!=='string'||s.length>200))){json(res,400,{error:'题目记录格式不正确。'});return}
-        json(res,200,{questions:await ai.round(data.exclude)});return;
+        json(res,200,{questions:await ai.round(data.exclude),generation:ai.lastRoundReport});return;
       }
       if(path==='/api/judge'){
         if(typeof data.questionId!=='string'||data.questionId.length>100){json(res,400,{error:'缺少有效题目编号。'});return}
@@ -35,5 +35,5 @@ http.createServer(async(req,res)=>{
     if(!['GET','HEAD'].includes(req.method)){res.writeHead(405).end();return}
     const file=path==='/'?'index.html':path.slice(1);if(!files.has(file)){res.writeHead(404).end();return}
     const data=await readFile(new URL('./dist/'+file,import.meta.url));res.writeHead(200,{'Content-Type':types[file.split('.').pop()],'Cache-Control':'no-cache','X-Content-Type-Options':'nosniff'}).end(req.method==='HEAD'?undefined:data);
-  }catch(e){json(res,e.status||503,{error:e.status?e.message:'服务暂时不可用，请使用题库模式。'})}
+  }catch(e){json(res,e.status||503,{error:e.status?e.message:'服务暂时不可用，请使用题库模式。',...(e.code==='ROUND_INCOMPLETE'?{code:e.code,generation:e.generation}:{})})}
 }).listen(port,host,()=>console.log(`Local: ${origin} | AI ${ai.key?'configured':'not configured'}`));

@@ -74,11 +74,13 @@ test('offline stylesheet keeps its base colors without leftover external font im
 test('AI round keeps a selected theme on failure and changes to AI comprehensive mode on success',async()=>{
  const storage=memory();let succeed=false;
  const generated=bankData.bank.slice(0,7).map((q,i)=>({...q,id:'ai-theme-test-'+i,source:'ai'}));
- const app=await appHarness(storage,{gameFetch:async path=>path==='/api/health'?{ok:true,json:async()=>({enabled:true,minIntervalSeconds:2})}:{ok:succeed,json:async()=>succeed?{questions:generated}:{error:'模拟生成失败'}}});
+ const app=await appHarness(storage,{gameFetch:async path=>path==='/api/health'?{ok:true,json:async()=>({enabled:true,minIntervalSeconds:2})}:{ok:succeed,json:async()=>succeed?{questions:generated,generation:{categories:5}}:{error:'模拟生成失败',code:'ROUND_INCOMPLETE'}}});
  app.element('theme-select').value='arts';app.element('theme-start').onclick();const before=app.state();
  await app.element('ai-round').onclick();assert.equal(app.state().diveId,before.diveId);assert.equal(app.state().theme,'arts');assert.equal(app.element('theme-start').disabled,false);
+ assert.match(app.element('ai-round').textContent,/继续补齐/);
  succeed=true;await app.element('ai-round').onclick();assert.equal(app.state().theme,'all');assert.equal(app.state().mode,'ai');assert.notEqual(app.state().diveId,before.diveId);
  assert.equal(app.state().questions[0].id,'ai-theme-test-0');assert.equal((await app.read()).mode,'ai');
+ assert.equal(app.element('ai-round').textContent,'AI 新一轮 ✦');assert.match(app.element('ai-status').textContent,/7 道、5 类/);
 });
 test('legacy sessions migrate with a stable ID and themed metadata cannot mislabel unrelated questions',async()=>{
  const storage=memory(),app=await appHarness(storage);const saved=app.state();

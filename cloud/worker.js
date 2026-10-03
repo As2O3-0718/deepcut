@@ -18,7 +18,7 @@ export class GameService {
  async fetch(request){
   const path=new URL(request.url).pathname;
   try{
-   if(path==='/api/health'&&request.method==='GET')return json({enabled:!!this.ai.key,minIntervalSeconds:this.ai.minIntervalMs/1000});
+   if(path==='/api/health'&&request.method==='GET')return json({enabled:!!this.ai.key,minIntervalSeconds:this.ai.minIntervalMs/1000,generationVersion:this.ai.generationVersion});
    if(!['/api/round','/api/judge','/api/review'].includes(path))return json({error:'接口不存在。'},404);
    if(request.method!=='POST'||!request.headers.get('Content-Type')?.startsWith('application/json'))return json({error:'需要 JSON POST 请求。'},405);
    let raw='',size=0;const decoder=new TextDecoder();for await(const chunk of request.body||[]){size+=chunk.byteLength;if(size>64000)return json({error:'请求过长。'},413);raw+=decoder.decode(chunk,{stream:true})}
@@ -27,10 +27,10 @@ export class GameService {
    if(!this.ai.key)return json({error:'AI 密钥尚未配置。'},503);
    if(path==='/api/round'){
     if(data.exclude!==undefined&&(!Array.isArray(data.exclude)||data.exclude.length>2000||data.exclude.some(x=>typeof x!=='string'||x.length>200)))return json({error:'题目记录格式不正确。'},400);
-    return json({questions:await this.ai.round(data.exclude)});
+    return json({questions:await this.ai.round(data.exclude),generation:this.ai.lastRoundReport});
    }
    if(typeof data.questionId!=='string'||data.questionId.length>100)return json({error:'缺少题目编号。'},400);
    return json(path==='/api/judge'?await this.ai.judge(data.questionId,data.answer,{recheck:data.recheck}):await this.ai.review(data));
-  }catch(e){return json({error:e.status?e.message:'服务暂时不可用，请重试。'},e.status||503)}
+  }catch(e){return json({error:e.status?e.message:'服务暂时不可用，请重试。',...(e.code==='ROUND_INCOMPLETE'?{code:e.code,generation:e.generation}:{})},e.status||503)}
  }
 }
