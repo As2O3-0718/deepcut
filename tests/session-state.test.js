@@ -5,6 +5,7 @@ import vm from 'node:vm';
 import {bank,findAnswer,pickRound,chooseReplacement,mergeHistory,avoidRecentSwaps} from '../dist/bank.js';
 import {fullScoreAnswers} from '../dist/scoring.js';
 import {createSessionStore,validateSession,SESSION_STORAGE,SESSION_MAX_AGE} from '../dist/session-state.js';
+import * as diveLog from '../dist/dive-log.js';
 
 const sessionNow=1790000000000;
 const sessionMemory=()=>{const values=new Map();return{getItem:key=>values.get(key)??null,setItem:(key,value)=>values.set(key,value)}};
@@ -69,7 +70,7 @@ test('app restoration renders locked feedback without adding points again and ne
   append(...items){this.children.push(...items)}replaceChildren(...items){this.children=items}before(){}after(){}focus(){}addEventListener(){}querySelector(){return new Element()}querySelectorAll(){return[]}showModal(){}close(){}
  }
  const elements=new Map(),registered=new Map();const element=id=>{if(!elements.has(id))elements.set(id,new Element());return elements.get(id)};
- const context={document:{getElementById:element,createElement:()=>new Element(),modelContext:{registerTool:tool=>registered.set(tool.name,tool)}},navigator:{},window:{addEventListener(){}},localStorage:storage,hasGameAPI:false,isLocalAPI:false,createSessionStore,bank,findAnswer,pickRound,chooseReplacement,mergeHistory,avoidRecentSwaps,fullScoreAnswers,eligibleQuestions:x=>x,readFeedback:()=>[],createVoteControls:()=>new Element(),restoreBlockedQuestions:()=>0,exportFeedback:()=>0,knownInvalidAnswer:()=>null};
+ const context={document:{getElementById:element,createElement:()=>new Element(),modelContext:{registerTool:tool=>registered.set(tool.name,tool)}},navigator:{},window:{addEventListener(){}},localStorage:storage,hasGameAPI:false,isLocalAPI:false,createSessionStore,bank,findAnswer,pickRound,chooseReplacement,mergeHistory,avoidRecentSwaps,fullScoreAnswers,...diveLog,eligibleQuestions:x=>x,readFeedback:()=>[],createVoteControls:()=>new Element(),restoreBlockedQuestions:()=>0,exportFeedback:()=>0,knownInvalidAnswer:()=>null};
  const source=(await readFile(new URL('../dist/app.js',import.meta.url),'utf8')).replace(/^import .*;\r?\n/gm,'');vm.runInNewContext(source,context);
  const read=()=>registered.get('get_game_state').execute();let current=await read();assert.equal(current.answered,true);assert.equal(current.records.length,1);assert.equal(current.records[0].score,state.records[0].score);assert.equal(element('total').textContent,state.records[0].score);
  element('skip').onclick();assert.equal((await read()).records.length,1);

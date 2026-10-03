@@ -1,6 +1,6 @@
 import fs from 'node:fs';import vm from 'node:vm';
 let html=fs.readFileSync('dist/index.html','utf8');
-const css=fs.readFileSync('dist/style.css','utf8').replace(/@import[^;]+;/g,'');
+const css=fs.readFileSync('dist/style.css','utf8').replace(/@import\s+url\((?:"[^"]*"|'[^']*'|[^)]*)\)\s*;/g,'');
 const generated=fs.readFileSync('dist/generated.js','utf8').replace('export default','const generated =');
 const bank=fs.readFileSync('dist/bank.js','utf8').replace(/^\s*import[^;]+;\s*/gm,'').replace(/export /g,'');
 const app=fs.readFileSync('dist/app.js','utf8').replace(/^\s*import[^;]+;\s*/gm,'');
@@ -9,7 +9,8 @@ const eligibility=fs.readFileSync('dist/eligibility.js','utf8').replace(/export 
 const feedbackData=fs.readFileSync('dist/feedback-data.js','utf8').replace(/export /g,'');
 const feedbackUI=fs.readFileSync('dist/feedback-ui.js','utf8').replace(/^\s*import[^;]+;\s*/gm,'').replace(/export /g,'');
 const sessionState=fs.readFileSync('dist/session-state.js','utf8').replace(/^\s*import[^;]+;\s*/gm,'').replace(/export /g,'');
+const diveLog=fs.readFileSync('dist/dive-log.js','utf8').replace(/export /g,'');
 const apiClient="const hasGameAPI=false,isLocalAPI=false;function gameFetch(){return Promise.reject(new Error('离线版不提供 AI'))}\n";
-const script='(()=>{\n'+apiClient+feedbackData+'\n'+feedbackUI+'\n'+eligibility+'\n'+scoring+'\n'+generated+'\n'+bank+'\n'+sessionState+'\n'+app+'\n})();';new vm.Script(script);
+const script='(()=>{\n'+apiClient+feedbackData+'\n'+feedbackUI+'\n'+eligibility+'\n'+scoring+'\n'+generated+'\n'+bank+'\n'+diveLog+'\n'+sessionState+'\n'+app+'\n})();';new vm.Script(script);
 html=html.replace('<link rel="stylesheet" href="style.css">',()=>'<style>'+css+'</style>').replace('<script type="module" src="app.js"></script>',()=>'<script>'+script.replace(/<\/script/gi,'<\\/script')+'</script>').replace('href="./"','href=""');
 fs.writeFileSync('offline/Deepcut.html',html);console.log('Offline game regenerated without keys or network dependencies.');

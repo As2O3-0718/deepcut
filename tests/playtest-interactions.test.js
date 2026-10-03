@@ -6,6 +6,7 @@ import {bank,findAnswer,pickRound,chooseReplacement,mergeHistory,avoidRecentSwap
 import {fullScoreAnswers} from '../dist/scoring.js';
 import {createSessionStore} from '../dist/session-state.js';
 import * as feedbackData from '../dist/feedback-data.js';
+import * as diveLog from '../dist/dive-log.js';
 
 function memoryStorage(){const entries=new Map();return{getItem:key=>entries.get(key)??null,setItem:(key,value)=>entries.set(key,value)}}
 function testDOM(){
@@ -29,7 +30,7 @@ async function source(file){return(await readFile(new URL('../dist/'+file,import
 test('retry judges the edited answer and rejects an empty edit without another API call',async()=>{
  const dom=testDOM(),storage=memoryStorage(),registered=new Map(),requests=[];
  dom.document.modelContext={registerTool:tool=>registered.set(tool.name,tool)};
- const context={...dom,navigator:{},localStorage:storage,hasGameAPI:true,isLocalAPI:false,AbortSignal,createSessionStore,bank,findAnswer,pickRound,chooseReplacement,mergeHistory,avoidRecentSwaps,fullScoreAnswers,...feedbackData,createVoteControls:()=>new dom.Element(),restoreBlockedQuestions:()=>0,exportFeedback:()=>0,knownInvalidAnswer:()=>null,gameFetch:async(path,options)=>{
+ const context={...dom,navigator:{},localStorage:storage,hasGameAPI:true,isLocalAPI:false,AbortSignal,createSessionStore,bank,findAnswer,pickRound,chooseReplacement,mergeHistory,avoidRecentSwaps,fullScoreAnswers,...feedbackData,...diveLog,createVoteControls:()=>new dom.Element(),restoreBlockedQuestions:()=>0,exportFeedback:()=>0,knownInvalidAnswer:()=>null,gameFetch:async(path,options)=>{
   if(path==='/api/health')return{ok:true,json:async()=>({enabled:true,minIntervalSeconds:2})};
   requests.push(JSON.parse(options.body));return{ok:true,json:async()=>({verdict:'uncertain',reason:'无法确认这个答案。'})};
  }};

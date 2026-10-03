@@ -1,4 +1,5 @@
 import {SCORING_VERSION} from './scoring.js';
+import {THEMES,themeQuestions} from './dive-log.js';
 
 export const SESSION_STORAGE='deepcut-session-v1';
 export const SESSION_MAX_AGE=24*60*60*1000;
@@ -19,6 +20,9 @@ function sessionQuestion(value){
 export function validateSession(value,{now=Date.now(),bank=[]}={}){
  if(!value||value.version!==SESSION_VERSION||value.scoringVersion!==SCORING_VERSION||!Number.isSafeInteger(value.savedAt)||value.savedAt<0||value.savedAt>now+60000||now-value.savedAt>SESSION_MAX_AGE||value.busy!==undefined||!Array.isArray(value.questions)||value.questions.length!==7||!Number.isInteger(value.index)||value.index<0||value.index>6||typeof value.locked!=='boolean'||typeof value.complete!=='boolean'||!Array.isArray(value.records)||!Array.isArray(value.swapped)||value.swapped.length>2||typeof value.draft!=='string'||value.draft.length>120)throw Error('Invalid saved session');
  const questions=value.questions.map(sessionQuestion),swapped=value.swapped.map(sessionQuestion);
+ const theme=value.theme??'all',mode=value.mode??(questions.some(q=>q.source==='ai'&&!bank.some(item=>item.id===q.id))?'ai':'bank'),diveId=value.diveId??('legacy-'+value.savedAt);
+ if(!THEMES.some(t=>t.id===theme)||!['bank','ai'].includes(mode)||!sessionText(diveId,100))throw Error('Invalid saved mode');
+ if(mode==='ai'&&theme!=='all'||mode==='bank'&&themeQuestions([...questions,...swapped],theme).length!==questions.length+swapped.length)throw Error('Saved theme changed');
  const all=[...questions,...swapped];
  if(new Set(all.map(q=>q.id)).size!==all.length||new Set(all.map(q=>q.title)).size!==all.length)throw Error('Duplicate saved questions');
  for(const q of all){const original=bank.find(item=>item.id===q.id);if(original&&JSON.stringify(sessionQuestion(original))!==JSON.stringify(q)||!original&&q.source!=='ai')throw Error('Saved question changed');}
@@ -30,7 +34,7 @@ export function validateSession(value,{now=Date.now(),bank=[]}={}){
   if(r.source==='live-ai'&&!r.reason.trim())throw Error('Missing AI explanation');
   return{question:r.question,answer:r.answer,score:r.score,source:r.source,reason:r.reason};
  });
- return{version:SESSION_VERSION,scoringVersion:SCORING_VERSION,savedAt:value.savedAt,questions,index:value.index,records,swapped,locked:value.locked,complete:value.complete,draft:value.draft};
+ return{version:SESSION_VERSION,scoringVersion:SCORING_VERSION,savedAt:value.savedAt,questions,index:value.index,records,swapped,locked:value.locked,complete:value.complete,draft:value.draft,theme,mode,diveId};
 }
 
 export function createSessionStore(storage,{bank=[],now=()=>Date.now()}={}){
